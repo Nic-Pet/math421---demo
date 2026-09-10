@@ -41,7 +41,7 @@ $$
 2.  Calculate:
 
 ```{r}
-Prob2 = seq(1,100,3)
+Prob2 = seq(1,100,1)
 Prob2^100
 sum(Prob2^100)
 ```
@@ -88,7 +88,7 @@ $$
 5.  Calculate:
 
 ```{r}
-Prob5 = seq(1,100,3)
+Prob5 = seq(1,101,2)
 Prob5^Prob5
 sum(Prob5^Prob5)
 ```
