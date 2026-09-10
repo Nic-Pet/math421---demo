@@ -160,20 +160,33 @@ S = 1 + 4 + 7 + 10 +... + 100
 <li>Calculate:</li>
 </ol>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>Prob2 <span class="ot">=</span> <span class="fu">seq</span>(<span class="dv">1</span>,<span class="dv">100</span>,<span class="dv">3</span>)</span>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>Prob2 <span class="ot">=</span> <span class="fu">seq</span>(<span class="dv">1</span>,<span class="dv">100</span>,<span class="dv">1</span>)</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>Prob2<span class="sc">^</span><span class="dv">100</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code> [1]  1.000000e+00  1.606938e+60  3.234477e+84 1.000000e+100 2.479335e+111
- [6] 2.582250e+120 7.505162e+127 1.746900e+134 6.223015e+139 5.197603e+144
-[11] 1.368262e+149 1.405697e+153 6.609558e+156 1.606938e+160 2.222519e+163
-[16] 1.887049e+166 1.046184e+169 3.984138e+171 1.087099e+174 2.201909e+176
-[21] 3.411799e+178 4.149516e+180 4.050235e+182 3.234477e+184 2.149245e+186
-[26] 1.206033e+188 5.790408e+189 2.406497e+191 8.747674e+192 2.807160e+194
-[31] 8.019351e+195 2.054875e+197 4.755251e+198 1.000000e+200</code></pre>
+<pre><code>  [1]  1.000000e+00  1.267651e+30  5.153775e+47  1.606938e+60  7.888609e+69
+  [6]  6.533186e+77  3.234477e+84  2.037036e+90  2.656140e+95 1.000000e+100
+ [11] 1.378061e+104 8.281797e+107 2.479335e+111 4.100186e+114 4.065612e+117
+ [16] 2.582250e+120 1.108899e+123 3.367057e+125 7.505162e+127 1.267651e+130
+ [21] 1.666976e+132 1.746900e+134 1.488619e+136 1.049843e+138 6.223015e+139
+ [26] 3.142931e+141 1.368915e+143 5.197603e+144 1.737000e+146 5.153775e+147
+ [31] 1.368262e+149 3.273391e+150 7.102218e+151 1.405697e+153 2.551552e+154
+ [36] 4.268252e+155 6.609558e+156 9.513924e+157 1.277794e+159 1.606938e+160
+ [41] 1.898391e+161 2.113144e+162 2.222519e+163 2.214459e+164 2.095325e+165
+ [46] 1.887049e+166 1.621010e+167 1.330834e+168 1.046184e+169 7.888609e+169
+ [51] 5.715018e+170 3.984138e+171 2.676621e+172 1.735306e+173 1.087099e+174
+ [56] 6.588745e+174 3.867992e+175 2.201909e+176 1.216749e+177 6.533186e+177
+ [61] 3.411799e+178 1.734479e+179 8.591222e+179 4.149516e+180 1.955851e+181
+ [66] 9.003131e+181 4.050235e+182 1.781933e+183 7.672008e+183 3.234477e+184
+ [71] 1.336087e+185 5.410653e+185 2.149245e+186 8.378610e+186 3.207202e+187
+ [76] 1.206033e+188 4.457307e+188 1.619796e+189 5.790408e+189 2.037036e+190
+ [81] 7.055079e+190 2.406497e+191 8.087406e+191 2.678728e+192 8.747674e+192
+ [86] 2.817378e+193 8.952107e+193 2.807160e+194 8.689618e+194 2.656140e+195
+ [91] 8.019351e+195 2.392119e+196 7.051717e+196 2.054875e+197 5.920529e+197
+ [96] 1.687032e+198 4.755251e+198 1.326196e+199 3.660323e+199 1.000000e+200</code></pre>
 </div>
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sum</span>(Prob2<span class="sc">^</span><span class="dv">100</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>[1] 1.04969e+200</code></pre>
+<pre><code>[1] 1.572114e+200</code></pre>
 </div>
 </div>
 <p><span class="math display">\[
@@ -310,20 +323,24 @@ S = \frac{1}{1\cdot 2 \cdot 3}+\frac{1}{2 \cdot 3 \cdot 4}+...+\frac{1}{100\cdot
 <li>Calculate:</li>
 </ol>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>Prob5 <span class="ot">=</span> <span class="fu">seq</span>(<span class="dv">1</span>,<span class="dv">100</span>,<span class="dv">3</span>)</span>
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>Prob5 <span class="ot">=</span> <span class="fu">seq</span>(<span class="dv">1</span>,<span class="dv">101</span>,<span class="dv">2</span>)</span>
 <span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>Prob5<span class="sc">^</span>Prob5</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code> [1]  1.000000e+00  2.560000e+02  8.235430e+05  1.000000e+10  3.028751e+14
- [6]  1.844674e+19  1.978420e+24  3.414279e+29  8.881784e+34  3.314552e+40
-[11]  1.706917e+46  1.175664e+52  1.055513e+58  1.208926e+64  1.734377e+70
-[16]  3.068035e+76  6.600972e+82  1.706766e+89  5.247445e+95 1.900306e+102
-[21] 8.037481e+108 3.940201e+115 2.223370e+122 1.435036e+129 1.053341e+136
-[26] 8.746474e+142 8.175987e+149 8.565168e+156 1.001403e+164 1.301593e+171
-[31] 1.873988e+178 2.978642e+185 5.210246e+192 1.000000e+200</code></pre>
+<pre><code> [1]  1.000000e+00  2.700000e+01  3.125000e+03  8.235430e+05  3.874205e+08
+ [6]  2.853117e+11  3.028751e+14  4.378939e+17  8.272403e+20  1.978420e+24
+[11]  5.842587e+27  2.088047e+31  8.881784e+34  4.434265e+38  2.567686e+42
+[16]  1.706917e+46  1.291100e+50  1.102507e+54  1.055513e+58  1.125951e+62
+[21]  1.330878e+66  1.734377e+70  2.480636e+74  3.877924e+78  6.600972e+82
+[26]  1.219211e+87  2.435685e+91  5.247445e+95 1.215813e+100 3.021821e+104
+[31] 8.037481e+108 2.282730e+113 6.908252e+117 2.223370e+122 7.596040e+126
+[36] 2.750064e+131 1.053341e+136 4.261817e+140 1.818804e+145 8.175987e+149
+[41] 3.866220e+154 1.920798e+159 1.001403e+164 5.472364e+168 3.131198e+173
+[46] 1.873988e+178 1.171964e+183 7.651428e+187 5.210246e+192 3.697296e+197
+[51] 2.731862e+202</code></pre>
 </div>
 <div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sum</span>(Prob5<span class="sc">^</span>Prob5)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>[1] 1e+200</code></pre>
+<pre><code>[1] 2.731899e+202</code></pre>
 </div>
 </div>
 <p><span class="math display">\[
