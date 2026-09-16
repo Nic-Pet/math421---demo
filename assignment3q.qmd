@@ -4,23 +4,257 @@ format: html
 editor: visual
 ---
 
-## Quarto
+***How to do it?***:
 
-Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+-   Open the Quarto file of this assignment ([link](assignment3.qmd)) in Rstudio.
 
-## Running Code
+-   Right under each **question**, insert a code chunk (you can use the hotkey `Ctrl + Alt + I` to add a code chunk) and code the solution for the question.
 
-When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
+-   `Knit` the rmarkdown file (hotkey: `Ctrl + Alt + K`) to export an html.
 
-```{r}
-1 + 1
+-   Publish the html file to your Githiub Page.
+
+***Submission***: Submit the link on Github of the assignment to Canvas.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE)
 ```
 
-You can add options to executable code like this
+------------------------------------------------------------------------
 
-```{r}
-#| echo: false
-2 * 2
+## Problems
+
+\
+
+1.  Create the following data frame
+
+| Rank | Age | Name  |
+|:-----|:----|:------|
+| 0    | 28  | Tom   |
+| 1    | 34  | Jack  |
+| 2    | 29  | Steve |
+| 3    | 42  | Ricky |
+
+```{r, echo=FALSE, eval=FALSE}
+## ---- 1. Create the data frame ----
+df1 <- data.frame(
+  Rank = 0:3,
+  Age  = c(28, 34, 29, 42),
+  Name = c("Tom", "Jack", "Steve", "Ricky")
+)
+df1
 ```
 
-The `echo: false` option disables the printing of code (only output is displayed).
+2.  Use `read.csv` to import the Covid19 Vaccination data from WHO: [link](https://bryantstats.github.io/math421/data/us-states.csv).
+
+```{r, echo=FALSE, eval=FALSE}
+df <- read.csv('https://bryantstats.github.io/math421/data/us-states.csv')
+```
+
+3.  Show the names of the variables in the data
+
+```{r, echo=FALSE, eval=FALSE}
+
+names(df)
+```
+
+4.  How many columns and rows the data have?
+
+```{r, echo=FALSE, eval=FALSE}
+nrow(df)
+ncol(df)
+dim(df)
+```
+
+5.  How many missing values are there? Show the missing values by columns. What variable has the most number of missing values?
+
+```{r, echo=FALSE, eval=FALSE}
+sum(is.na(df))
+colSums(is.na(df))
+names(which.max(colSums(is.na(df))))
+```
+
+6.  What is the class of the `date` column. Change the `date` columns to `date` type using the `as.Date` function. Show the new class of the `date` column.
+
+```{r, echo=FALSE, eval=FALSE}
+class(df$date)
+df$date <- as.Date(df$date)
+class(df$date)
+```
+
+7.  Capitalize the names of all the variables
+
+```{r, echo=FALSE, eval=FALSE}
+df_caps <- df
+names(df_caps) <- toupper(names(df_caps))
+names(df_caps)
+```
+
+8.  Find the average number of cases per day. Find the maximum cases a day.
+
+```{r, echo=FALSE, eval=FALSE}
+mean(df$cases)
+max(df$cases)
+```
+
+9.  How many states are there in the data?
+
+```{r, echo=FALSE, eval=FALSE}
+length(unique(df$state))
+```
+
+10. Create a new variable `weekdays` to store the weekday for each rows.
+
+```{r, echo=FALSE, eval=FALSE}
+df$weekdays <- weekdays(df$date)
+head(df$weekdays)
+```
+
+11. Create the categorical variable `death2` variable taking the values as follows
+
+-   `has_death` if there is a death that day
+-   `no_death` if there is no death that day
+
+Find the frequency and relative frequency of `no_death` and `has_death`.
+
+```{r, echo=FALSE, eval=FALSE}
+df$death2 <- ifelse(df$deaths > 0, "has_death", "no_death")
+table(df$death2)
+prop.table(table(df$death2))
+```
+
+12. Find the first quartile (Q1), second quartile (Q2) and and third quartile (Q3) of the variable `death`. (Hint: Use the `summary` function)
+
+```{r, echo=FALSE, eval=FALSE}
+summary(df$deaths)
+quantile(df$deaths, probs = c(0.25, 0.5, 0.75), na.rm = TRUE)
+```
+
+13. Create the categorical variable `death3` variable taking the values as follows
+
+-   `low_death` if the number of deaths smaller than the 25 percentile (Q1)
+
+-   `mid_death` if the number of deaths from Q1 to Q3
+
+-   `high_death` if the number of deaths greater than Q3
+
+```{r, echo=FALSE, eval=FALSE}
+library(dplyr)
+
+q <- quantile(df$deaths, probs = c(0.25, 0.75), na.rm = TRUE)
+
+df$death3 <- case_when(
+  df$deaths < q[1] ~ "low_death",
+  df$deaths >= q[1] & df$deaths <= q[2] ~ "mid_death",
+  df$deaths > q[2] ~ "high_death"
+)
+table(df$death3)
+```
+
+14. Find the average cases in Rhode Island in 2021
+
+```{r, echo=FALSE, eval=FALSE}
+ri_2021 <- df[df$state == "Rhode Island" & format(df$date, "%Y") == "2021", ]
+mean(ri_2021$cases)
+```
+
+15. Find the median cases by weekdays in Rhode Island in 2021
+
+```{r, echo=FALSE, eval=FALSE}
+aggregate(cases ~ weekdays, data = ri_2021, FUN = median)
+```
+
+16. Compare the median cases in Rhode Island in June, July, August and September in 2021.
+
+```{r, echo=FALSE, eval=FALSE}
+ri_2021$month <- format(ri_2021$date, "%B")
+
+ri_summer <- ri_2021[ri_2021$month %in% c("June", "July", "August", "September"), ]
+aggregate(cases ~ month, data = ri_summer, FUN = median)
+```
+
+17. Find your own dataset, import it and implement the following functions on the data
+
+-   head
+-   str
+-   names
+-   mean, min, max
+-   table
+-   is.na
+-   colSums
+-   class
+-   cor
+-   by
+-   ifelse
+-   case_when
+
+```{r, echo=FALSE, eval=FALSE}
+titanic <- read.csv('https://bryantstats.github.io/math421/data/titanic.csv')
+
+head(titanic)
+str(titanic)
+names(titanic)
+
+mean(titanic$Age, na.rm = TRUE)
+min(titanic$Age, na.rm = TRUE)
+max(titanic$Age, na.rm = TRUE)
+
+table(titanic$Sex)
+
+is.na(titanic$Age)
+colSums(is.na(titanic))
+
+class(titanic$Age)
+
+cor(titanic$Age, titanic$Fare, use = "complete.obs")
+
+by(titanic$Fare, titanic$Pclass, mean)
+
+titanic$AgeGroup <- ifelse(titanic$Age >= 18, "Adult", "Minor")
+
+titanic$FareLevel <- case_when(
+  titanic$Fare < 10 ~ "Low",
+  titanic$Fare < 30 ~ "Medium",
+  TRUE ~ "High"
+)
+```
+
+18. In the dataset in #17, practice the follows. You can reuse the code of 17.
+
+-   Create a categorical variable from a continuous variable
+-   From one categorical variable, create a new categorical variable with fewer categories
+
+```{r, echo=FALSE, eval=FALSE}
+# continuous -> categorical
+titanic$AgeGroup <- ifelse(titanic$Age >= 18, "Adult", "Minor")
+table(titanic$AgeGroup)
+
+# categorical -> fewer categories
+titanic$ClassGroup <- case_when(
+  titanic$Pclass == 1 ~ "Upper",
+  titanic$Pclass %in% c(2, 3) ~ "Lower/Middle"
+)
+table(titanic$ClassGroup)
+```
+
+If you do not have a data, you can use [the titanic dataset](https://www.kaggle.com/competitions/titanic/overview), which can be downloaded at [this link](https://bryantstats.github.io/math421/data/titanic.csv)
+
+```{r, echo=FALSE, eval=FALSE}
+df = read.csv('https://bryantstats.github.io/math421/data/us-states.csv')
+names(df)
+
+str(df1)
+
+names(df1)
+
+mean(df1$Age)
+
+table(df1$Sex)
+
+table(df1$Survived)
+
+table(df1$Pclass)
+
+
+
+```
