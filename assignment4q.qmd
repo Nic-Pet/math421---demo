@@ -1,0 +1,491 @@
+
+---
+title: "Assignment 4"
+format: html
+editor: visual
+---
+
+**How to do it?**
+
+- Open this Quarto file in RStudio.
+- Run the code chunks below.
+- Click **Render** to export the assignment as HTML.
+- Publish the HTML file to your GitHub Pages site.
+
+**Submission:** Submit the GitHub Pages link to Canvas.
+
+```{r setup}
+#| message: false
+#| warning: false
+
+library(tidyverse)
+library(lubridate)
+
+knitr::opts_chunk$set(
+  message = FALSE,
+  warning = FALSE
+)
+```
+
+---
+
+#### 1. Install `tidyverse` package
+
+Install `tidyverse` if it is not already installed.
+
+```{r}
+if (!requireNamespace("tidyverse", quietly = TRUE)) {
+  install.packages("tidyverse")
+}
+
+library(tidyverse)
+```
+
+---
+
+#### 2. Read the data using `read_csv`
+
+Import the US COVID-19 dataset.
+
+```{r}
+df <- read_csv(
+  "https://bryantstats.github.io/math421/data/all-states-history.csv",
+  show_col_types = FALSE
+)
+
+head(df)
+```
+
+---
+
+#### 3. Fix the date and create new variables
+
+Create `month`, `weekday`, and `monthday`.
+
+```{r}
+library(lubridate)
+
+df$date <- ymd(df$date)
+
+# Month of the year
+df$month <- month(df$date)
+
+# Day of the week
+# Sunday = 1, Saturday = 7
+df$weekday <- wday(df$date)
+
+# Day of the month
+df$monthday <- mday(df$date)
+
+head(df)
+```
+
+---
+
+#### 4. Create new variables with `case_when`
+
+**Create the daily_death variable.**
+
+Classify daily deaths as low, medium, or high.
+
+```{r}
+library(dplyr)
+
+df$daily_death <- case_when(
+  is.na(df$deathIncrease) ~ NA_character_,
+  df$deathIncrease < 3 ~ "low",
+  df$deathIncrease <= 14 ~ "medium",
+  TRUE ~ "high"
+)
+
+table(df$daily_death)
+```
+
+**Create the month2 variable.**
+
+- early_month: days 1–10
+- mid_month: days 11–20
+- end_month: days 21–31
+
+```{r}
+df$month2 <- case_when(
+  df$monthday <= 10 ~ "early_month",
+  df$monthday <= 20 ~ "mid_month",
+  TRUE ~ "end_month"
+)
+
+table(df$month2)
+```
+
+**Create the weekend variable.**
+
+Assign 1 to Saturday and Sunday and 0 to other days.
+
+```{r}
+df$weekend <- case_when(
+  df$weekday %in% c(1, 7) ~ 1,
+  TRUE ~ 0
+)
+
+table(df$weekend)
+```
+
+---
+
+#### 5. Select function
+
+Remove the `totalTestsViral` column.
+
+```{r}
+df <- df %>%
+  select(-totalTestsViral)
+
+head(df)
+```
+
+---
+
+#### 6. Pipe Operator (%>%)
+
+Rewrite the calculations using the pipe operator.
+
+```{r}
+x <- 1:100
+
+# Sum
+x %>% sum()
+
+# Square root
+x %>% sqrt()
+
+# Square root followed by sum
+x %>%
+  sqrt() %>%
+  sum()
+
+# Square root, sum, and logarithm
+x %>%
+  sqrt() %>%
+  sum() %>%
+  log()
+
+# Logarithm of 16 with base 2
+16 %>% log(2)
+```
+
+---
+
+#### 7. Combo 1: group_by + summarise
+
+**Calculate the median number of cases by month.**
+
+```{r}
+df %>%
+  group_by(month) %>%
+  summarise(
+    median_cases = median(
+      positiveIncrease,
+      na.rm = TRUE
+    )
+  )
+```
+
+**Calculate the average number of cases by month2.**
+
+```{r}
+df %>%
+  group_by(month2) %>%
+  summarise(
+    avg_cases = mean(
+      positiveIncrease,
+      na.rm = TRUE
+    )
+  )
+```
+
+**Calculate the median number of cases by weekend.**
+
+```{r}
+df %>%
+  group_by(weekend) %>%
+  summarise(
+    median_cases = median(
+      positiveIncrease,
+      na.rm = TRUE
+    )
+  )
+```
+
+---
+
+#### 8. Combo 2: filter + group_by + summarise
+
+**Calculate the median number of cases on weekends in October and November 2020, grouped by month.**
+
+```{r}
+df %>%
+  filter(
+    year(date) == 2020,
+    month %in% c(10, 11),
+    weekend == 1
+  ) %>%
+  group_by(month) %>%
+  summarise(
+    median_cases = median(
+      positiveIncrease,
+      na.rm = TRUE
+    )
+  )
+```
+
+**Calculate the average number of deaths during different periods of a month in Fall 2020.**
+
+```{r}
+df %>%
+  filter(
+    year(date) == 2020,
+    month %in% 9:11
+  ) %>%
+  group_by(month2) %>%
+  summarise(
+    avg_death = mean(
+      deathIncrease,
+      na.rm = TRUE
+    )
+  )
+```
+
+**Compare average hospitalizations between weekdays and weekends in Summer 2020.**
+
+```{r}
+df %>%
+  filter(
+    year(date) == 2020,
+    month %in% 6:8
+  ) %>%
+  group_by(weekend) %>%
+  summarise(
+    avg_hosp = mean(
+      hospitalizedCurrently,
+      na.rm = TRUE
+    )
+  )
+```
+
+**Redo Questions 14 and 15 from Assignment 3.**
+
+Import the dataset used in Assignment 3.
+
+```{r}
+df3 <- read_csv(
+  "https://bryantstats.github.io/math421/data/us-states.csv",
+  show_col_types = FALSE
+)
+
+df3$date <- as.Date(df3$date)
+
+df3$weekdays <- weekdays(df3$date)
+```
+
+**Question 14: Calculate the average number of cases in Rhode Island in 2021.**
+
+```{r}
+df3 %>%
+  filter(
+    state == "Rhode Island",
+    year(date) == 2021
+  ) %>%
+  summarise(
+    avg_cases = mean(
+      cases,
+      na.rm = TRUE
+    )
+  )
+```
+
+**Question 15: Calculate the median number of cases by weekday in Rhode Island in 2021.**
+
+```{r}
+df3 %>%
+  filter(
+    state == "Rhode Island",
+    year(date) == 2021
+  ) %>%
+  group_by(weekdays) %>%
+  summarise(
+    median_cases = median(
+      cases,
+      na.rm = TRUE
+    )
+  )
+```
+
+---
+
+#### 9. Combo 3: filter + group_by + summarise + arrange
+
+Find the month with the highest number of deaths on weekends.
+
+```{r}
+df %>%
+  filter(weekend == 1) %>%
+  group_by(month) %>%
+  summarise(
+    total_death = sum(
+      deathIncrease,
+      na.rm = TRUE
+    )
+  ) %>%
+  arrange(desc(total_death))
+```
+
+---
+
+#### 10. Use your own dataset
+
+For this question, we will use the Titanic dataset to demonstrate all the required functions and combinations.
+
+**Import the dataset.**
+
+```{r}
+t <- read_csv(
+  "https://bryantstats.github.io/math421/data/titanic.csv",
+  show_col_types = FALSE
+)
+
+head(t)
+```
+
+**1. Select**
+
+Select survival status, passenger class, sex, age, and fare.
+
+```{r}
+t %>%
+  select(Survived, Pclass, Sex, Age, Fare)
+```
+
+**2. Filter**
+
+Select female passengers in first class.
+
+```{r}
+t %>%
+  filter(
+    Sex == "female",
+    Pclass == 1
+  )
+```
+
+**3. Mutate**
+
+Create a variable representing total family size.
+
+```{r}
+t <- t %>%
+  mutate(
+    family_size = SibSp + Parch + 1
+  )
+
+head(t)
+```
+
+**4. Summarise**
+
+Calculate average age and average fare.
+
+```{r}
+t %>%
+  summarise(
+    avg_age = mean(Age, na.rm = TRUE),
+    avg_fare = mean(Fare, na.rm = TRUE)
+  )
+```
+
+**5. Arrange**
+
+Sort passengers by fare in descending order.
+
+```{r}
+t %>%
+  arrange(desc(Fare))
+```
+
+**6. Count**
+
+Count the number of passengers in each class.
+
+```{r}
+t %>%
+  count(Pclass)
+```
+
+**7. Count + Arrange**
+
+Count passengers by embarkation port and sort by frequency.
+
+```{r}
+t %>%
+  count(Embarked) %>%
+  arrange(desc(n))
+```
+
+**8. Filter + Count + Arrange**
+
+Count surviving passengers by class and sort in descending order.
+
+```{r}
+t %>%
+  filter(Survived == 1) %>%
+  count(Pclass) %>%
+  arrange(desc(n))
+```
+
+**9. Group_by + Summarise**
+
+Calculate survival rates by sex.
+
+```{r}
+t %>%
+  group_by(Sex) %>%
+  summarise(
+    survival_rate = mean(
+      Survived,
+      na.rm = TRUE
+    )
+  )
+```
+
+**10. Filter + Group_by + Summarise**
+
+Calculate average fares by passenger class for adults aged 18 and older.
+
+```{r}
+t %>%
+  filter(Age >= 18) %>%
+  group_by(Pclass) %>%
+  summarise(
+    avg_fare = mean(
+      Fare,
+      na.rm = TRUE
+    )
+  )
+```
+
+**11. Filter + Group_by + Summarise + Arrange**
+
+Calculate survival rates by passenger class and sex, excluding passengers with missing ages.
+
+```{r}
+t %>%
+  filter(!is.na(Age)) %>%
+  group_by(Pclass, Sex) %>%
+  summarise(
+    survival_rate = mean(
+      Survived,
+      na.rm = TRUE
+    ),
+    .groups = "drop"
+  ) %>%
+  arrange(desc(survival_rate))
+```
