@@ -47,7 +47,7 @@ df1
 
 2.  Use `read.csv` to import the Covid19 Vaccination data from WHO: [link](https://bryantstats.github.io/math421/data/us-states.csv).
 
-```{r, echo=FALSE, eval=FALSE}
+```{r, echo=FALSE}
 df <- read.csv('https://bryantstats.github.io/math421/data/us-states.csv')
 ```
 
