@@ -1,0 +1,138 @@
+---
+title: "Assignment 5 Part 1"
+format: html
+editor: visual
+---
+
+
+## Question 1 - Plot the number of NAs using aggr
+
+```{r}
+
+library(tidyverse)
+library(VIM)
+
+df <- read_csv("adult_census_missing.csv")
+
+colSums(is.na(df))
+```
+
+## Question 2 - Plot the number of NAs using aggr
+
+```{r}
+aggr(
+  df,
+  numbers = TRUE
+)
+```
+
+
+
+## Question 3
+
+```{r}
+df %>%
+  select_if(is.character) %>%
+  map(table)
+
+df %>%
+  summarise(
+    across(
+      where(is.character),
+      ~ sum(.x == "?", na.rm = TRUE)
+    )
+  )
+```
+
+## Question 4
+
+```{r}
+df <- df %>%
+  mutate(
+    across(
+      where(is.character),
+      ~ na_if(.x, "?")
+    )
+  ) %>%
+  mutate(
+    across(
+      where(is.character),
+      ~ na_if(.x, "Unknown")
+    )
+  ) %>%
+  mutate(
+    across(
+      where(is.character),
+      ~ na_if(.x, "")
+    )
+  )
+colSums(is.na(df))
+```
+
+
+## Question 5
+
+```{r}
+aggr(
+  df,
+  numbers = TRUE
+)
+```
+
+
+## Question 6
+
+```{r}
+df_removed <- df %>%
+  drop_na()
+
+nrow(df_removed)
+
+nrow(df)
+
+nrow(df_removed)
+```
+
+
+## Question 7
+
+```{r}
+df_filled <- df %>%
+  fill(
+    everything(),
+    .direction = "downup"
+  )
+colSums(is.na(df_filled))
+```
+
+## Question 8
+
+```{r}
+df_median_majority <- df
+
+df_median_majority <- df_median_majority %>%
+  mutate(
+    across(
+      where(is.numeric),
+      ~ replace_na(.x, median(.x, na.rm = TRUE))
+    )
+  )
+
+get_majority <- function(x) {
+  names(sort(table(x), decreasing = TRUE))[1]
+}
+
+df_median_majority <- df_median_majority %>%
+  mutate(
+    across(
+      where(is.character),
+      ~ replace_na(.x, get_majority(.x))
+    )
+  )
+
+colSums(is.na(df_median_majority))
+```
+
+
+
+

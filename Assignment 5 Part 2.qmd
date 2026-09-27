@@ -1,0 +1,188 @@
+---
+title: "Assignment 5 Part 2"
+format: html
+editor: visual
+---
+
+## Setup
+
+```{r}
+library(tidyverse)
+library(readxl)
+
+df <- read_excel("c2015.xlsx")
+```
+
+## Question 1 - Missing SEX values already in NA form
+
+```{r}
+sum(is.na(df$SEX))
+```
+
+## Question 2 - Find other missing values in SEX and convert them to NA
+
+```{r}
+table(df$SEX, useNA = "ifany")
+
+df <- df %>%
+  mutate(
+    SEX = na_if(SEX, "Unknown"),
+    SEX = na_if(SEX, "Not Reported")
+  )
+
+table(df$SEX, useNA = "ifany")
+```
+
+## Question 3 - Replace missing SEX with majority sex
+
+```{r}
+table(df$SEX)
+
+majority_sex <- names(which.max(table(df$SEX)))
+
+majority_sex
+
+df <- df %>%
+  mutate(
+    SEX = replace_na(SEX, majority_sex)
+  )
+
+table(df$SEX, useNA = "ifany")
+```
+
+## Question 4 - Examine AGE and convert missing forms to NA
+
+```{r}
+table(df$AGE, useNA = "ifany")
+
+df <- df %>%
+  mutate(
+    AGE = na_if(AGE, "Unknown"),
+    AGE = na_if(AGE, "Not Reported")
+  )
+```
+
+## Question 5 - Change Less than 1 to "0"
+
+```{r}
+df <- df %>%
+  mutate(
+    AGE = str_replace(AGE, "Less than 1", "0")
+  )
+
+table(df$AGE, useNA = "ifany")
+```
+
+## Question 6 - Convert AGE to numeric
+
+```{r}
+class(df$AGE)
+
+df <- df %>%
+  mutate(
+    AGE = as.numeric(AGE)
+  )
+
+class(df$AGE)
+```
+
+
+## Question 7 - Convert AGE to numeric
+
+```{r}
+class(df$AGE)
+
+df <- df %>%
+  mutate(
+    AGE = as.numeric(AGE)
+  )
+
+class(df$AGE)
+
+```
+
+## Question 8 - Convert AGE to numeric
+
+```{r}
+mean_age <- mean(df$AGE, na.rm = TRUE)
+
+mean_age
+
+df <- df %>%
+  mutate(
+    AGE = replace_na(AGE, mean_age)
+  )
+
+sum(is.na(df$AGE))
+```
+
+
+## Question 9 - Convert AGE to numeric
+
+```{r}
+table(df$TRAV_SP, useNA = "ifany")
+
+df <- df %>%
+  mutate(
+    TRAV_SP = str_remove(TRAV_SP, " MPH")
+  )
+
+table(df$TRAV_SP, useNA = "ifany")
+
+df <- df %>%
+  filter(TRAV_SP != "Greater" | is.na(TRAV_SP))
+
+df <- df %>%
+  filter(!str_detect(TRAV_SP, "Greater") | is.na(TRAV_SP))
+
+df <- df %>%
+  mutate(
+    TRAV_SP = str_replace(TRAV_SP, "Stopped", "0")
+  )
+
+table(df$TRAV_SP, useNA = "ifany")
+
+df <- df %>%
+  mutate(
+    TRAV_SP = na_if(TRAV_SP, "Unknown"),
+    TRAV_SP = na_if(TRAV_SP, "Not Reported")
+  )
+
+class(df$TRAV_SP)
+
+df <- df %>%
+  mutate(
+    TRAV_SP = as.numeric(TRAV_SP)
+  )
+
+class(df$TRAV_SP)
+
+median_speed <- median(df$TRAV_SP, na.rm = TRUE)
+
+median_speed
+
+df <- df %>%
+  mutate(
+    TRAV_SP = replace_na(TRAV_SP, median_speed)
+  )
+
+sum(is.na(df$TRAV_SP))
+```
+
+## Question 10 - Convert AGE to numeric
+
+```{r}
+drivers <- df %>%
+  filter(SEAT_POS == "Front Seat, Left Side") %>%
+  mutate(
+    AGE = as.numeric(AGE),
+    TRAV_SP = as.numeric(TRAV_SP)
+  )
+
+cor(
+  drivers$AGE,
+  drivers$TRAV_SP,
+  use = "complete.obs"
+)
+
+```
