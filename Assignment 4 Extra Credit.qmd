@@ -82,7 +82,7 @@ df %>%
 df %>%
   group_by(Released_Year) %>%
   summarize(
-    Avg_votes = mean(No_of_Votes,na.rd = TRUE)
+    Avg_votes = mean(No_of_Votes,na.rm = TRUE)
   ) 
   
 df %>%
@@ -97,16 +97,18 @@ df %>%
 
 
 ```{r}
-Q2 = quantile(df$No_of_Votes, 0.50)
-Q3 = quantile(df$No_of_Votes, 0.75)
+Q2 = quantile(df$No_of_Votes, 0.50, na.rm = TRUE)
+Q3 = quantile(df$No_of_Votes, 0.75, na.rm = TRUE)
 
 df %>%
   filter(
     Released_Year == 2020,
-    
-  )%>%
-
-
+    No_of_Votes >= Q2,
+    No_of_Votes <= Q3
+  ) %>%
+  summarize(
+    Avg_Meta_Score = mean(Meta_score, na.rm = TRUE)
+  )
 ```
 
 
@@ -123,7 +125,13 @@ df %>%
 
 
 ```{r}
+# Select only character columns
+df %>%
+  select_if(is.character)
 
+# Calculate the mean of all numeric columns
+df %>%
+  summarise_if(is.numeric, mean, na.rm = TRUE)
 ```
 
 
@@ -131,6 +139,61 @@ df %>%
 
 
 ```{r}
+
+df %>%
+  select(Series_Title, Genre, Director, IMDB_Rating)
+
+
+df %>%
+  filter(IMDB_Rating > 8.5)
+
+df %>%
+  mutate(
+    Gross_Millions = Gross / 1000000
+  ) %>%
+  select(Series_Title, Gross, Gross_Millions)
+
+df %>%
+  summarise(
+    Max_Votes = max(No_of_Votes, na.rm = TRUE)
+  )
+
+df %>%
+  arrange(desc(Meta_score)) %>%
+  select(Series_Title, Meta_score)
+
+df %>%
+  count(Certificate)
+
+df %>%
+  count(Genre) %>%
+  arrange(desc(n))
+
+df %>%
+  filter(IMDB_Rating > 8) %>%
+  count(Genre) %>%
+  arrange(desc(n))
+
+df %>%
+  group_by(Certificate) %>%
+  summarise(
+    Avg_Rating = mean(IMDB_Rating, na.rm = TRUE)
+  )
+
+df %>%
+  filter(Released_Year >= 2010) %>%
+  group_by(Genre) %>%
+  summarise(
+    Avg_Rating = mean(IMDB_Rating, na.rm = TRUE)
+  )
+
+df %>%
+  filter(Released_Year >= 2000) %>%
+  group_by(Genre) %>%
+  summarise(
+    Avg_Gross = mean(Gross, na.rm = TRUE)
+  ) %>%
+  arrange(desc(Avg_Gross))
 
 ```
 
