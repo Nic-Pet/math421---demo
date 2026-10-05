@@ -4,7 +4,6 @@ format: html
 editor: visual
 ---
 
-
 ## Question 1 - Plot the number of NAs using aggr
 
 ```{r}
@@ -26,12 +25,10 @@ aggr(
 )
 ```
 
-
-
-## Question 3
+## Question 3 Find other forms of missing values. Hint: You can use the table function to check if there are suspicious categories (Unknown, for example) in a variable. What all other forms of missing values shown in the data.
 
 ```{r}
-df %>%
+df_median_majority %>%
   select_if(is.character) %>%
   map(table)
 
@@ -44,7 +41,7 @@ df %>%
   )
 ```
 
-## Question 4
+## Question 4 Replace all the forms of missing values found to NA
 
 ```{r}
 df <- df %>%
@@ -69,8 +66,7 @@ df <- df %>%
 colSums(is.na(df))
 ```
 
-
-## Question 5
+## Question 5 Replot the number of NAs for each column.
 
 ```{r}
 aggr(
@@ -79,8 +75,7 @@ aggr(
 )
 ```
 
-
-## Question 6
+## Question 6 Approach 1 to handle NAs: remove all rows that have any NAs. Save the dataset after removing as a different data. The original data is unchanged (still have NAs). How many rows left after removing?
 
 ```{r}
 df_removed <- df %>%
@@ -93,8 +88,7 @@ nrow(df)
 nrow(df_removed)
 ```
 
-
-## Question 7
+## Question 7 Approach 2 to handle NAs: Fill all the NAs with the previous or next value. (Hint: Using fill function). Save the dataset after filling as a different data. The original data is unchanged (still have NAs).
 
 ```{r}
 df_filled <- df %>%
@@ -105,16 +99,18 @@ df_filled <- df %>%
 colSums(is.na(df_filled))
 ```
 
-## Question 8
+## Question 8 Approach 3 to handle NAs: For numeric variable, replace the NAs by the median. For categorical variables, replace the NAs to the majority.
 
 ```{r}
 df_median_majority <- df
 
+Unknown = "Unknown0"
+
 df_median_majority <- df_median_majority %>%
   mutate(
     across(
-      where(is.numeric),
-      ~ replace_na(.x, median(.x, na.rm = TRUE))
+      where(is.character),
+      ~ replace_na(.x, Unknown)
     )
   )
 
@@ -122,6 +118,7 @@ get_majority <- function(x) {
   names(sort(table(x), decreasing = TRUE))[1]
 }
 
+##majority 1 is most common value
 df_median_majority <- df_median_majority %>%
   mutate(
     across(
@@ -132,7 +129,3 @@ df_median_majority <- df_median_majority %>%
 
 colSums(is.na(df_median_majority))
 ```
-
-
-
-

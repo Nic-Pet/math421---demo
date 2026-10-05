@@ -16,4 +16,5 @@
 
 [Assignment 5 Part 2](Assignment 5 Part 2.html)
 
+[Assignment 6](Assignment 6.html)
 

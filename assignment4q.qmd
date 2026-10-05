@@ -1,4 +1,3 @@
-
 ---
 title: "Assignment 4"
 format: html
@@ -7,10 +6,10 @@ editor: visual
 
 **How to do it?**
 
-- Open this Quarto file in RStudio.
-- Run the code chunks below.
-- Click **Render** to export the assignment as HTML.
-- Publish the HTML file to your GitHub Pages site.
+-   Open this Quarto file in RStudio.
+-   Run the code chunks below.
+-   Click **Render** to export the assignment as HTML.
+-   Publish the HTML file to your GitHub Pages site.
 
 **Submission:** Submit the GitHub Pages link to Canvas.
 
@@ -27,7 +26,7 @@ knitr::opts_chunk$set(
 )
 ```
 
----
+------------------------------------------------------------------------
 
 #### 1. Install `tidyverse` package
 
@@ -41,7 +40,7 @@ if (!requireNamespace("tidyverse", quietly = TRUE)) {
 library(tidyverse)
 ```
 
----
+------------------------------------------------------------------------
 
 #### 2. Read the data using `read_csv`
 
@@ -56,7 +55,7 @@ df <- read_csv(
 head(df)
 ```
 
----
+------------------------------------------------------------------------
 
 #### 3. Fix the date and create new variables
 
@@ -80,7 +79,7 @@ df$monthday <- mday(df$date)
 head(df)
 ```
 
----
+------------------------------------------------------------------------
 
 #### 4. Create new variables with `case_when`
 
@@ -103,9 +102,9 @@ table(df$daily_death)
 
 **Create the month2 variable.**
 
-- early_month: days 1–10
-- mid_month: days 11–20
-- end_month: days 21–31
+-   early_month: days 1–10
+-   mid_month: days 11–20
+-   end_month: days 21–31
 
 ```{r}
 df$month2 <- case_when(
@@ -130,7 +129,7 @@ df$weekend <- case_when(
 table(df$weekend)
 ```
 
----
+------------------------------------------------------------------------
 
 #### 5. Select function
 
@@ -143,9 +142,9 @@ df <- df %>%
 head(df)
 ```
 
----
+------------------------------------------------------------------------
 
-#### 6. Pipe Operator (%>%)
+#### 6. Pipe Operator (%\>%)
 
 Rewrite the calculations using the pipe operator.
 
@@ -173,7 +172,7 @@ x %>%
 16 %>% log(2)
 ```
 
----
+------------------------------------------------------------------------
 
 #### 7. Combo 1: group_by + summarise
 
@@ -216,7 +215,7 @@ df %>%
   )
 ```
 
----
+------------------------------------------------------------------------
 
 #### 8. Combo 2: filter + group_by + summarise
 
@@ -320,7 +319,7 @@ df3 %>%
   )
 ```
 
----
+------------------------------------------------------------------------
 
 #### 9. Combo 3: filter + group_by + summarise + arrange
 
@@ -339,7 +338,7 @@ df %>%
   arrange(desc(total_death))
 ```
 
----
+------------------------------------------------------------------------
 
 #### 10. Use your own dataset
 

@@ -1,0 +1,178 @@
+---
+title: "Assignment 6"
+format: html
+editor: visual
+---
+
+## Setup
+
+```{r}
+
+library(tidyverse)
+library(ggplot2)
+
+df <- read_csv(
+  "https://bryantstats.github.io/math421/data/all-states-history.csv",
+  show_col_types = FALSE
+)
+
+head(df)
+```
+
+## 1For one continuous variable:
+##Density
+
+##Histogram
+
+##Boxplot
+
+```{r}
+ggplot(df, aes(x = positiveIncrease)) +
+  geom_density(fill = "lightblue", na.rm = TRUE) +
+  labs(
+    title = "Density of Daily Positive COVID Cases",
+    x = "Daily Increase in Positive Cases",
+    y = "Density"
+  ) 
+
+ggplot(df, aes(x = positiveIncrease)) +
+  geom_histogram(bins = 40, fill = "steelblue",
+                 color = "black", na.rm = TRUE) +
+  labs(
+    title = "Distribution of Daily Positive COVID Cases",
+    x = "Daily Increase in Positive Cases",
+    y = "Count"
+  ) 
+  
+
+
+ggplot(df, aes(y = positiveIncrease)) +
+  geom_boxplot(fill = "lightgreen", na.rm = TRUE) +
+  labs(
+    title = "Boxplot of Daily Positive COVID Cases",
+    y = "Daily Increase in Positive Cases"
+  ) 
+ 
+```
+
+## 2- For one categorical variable - Barplot
+
+```{r}
+
+ggplot(df, aes(x = state)) +
+  geom_bar(fill = "steelblue") +
+  labs(
+    title = "Number of Observations by State",
+    x = "State",
+    y = "Number of Observations"
+  ) 
+ 
+  
+
+```
+
+## 3 For two continuous variables Scatter Plot - Line Plot - Smooth Plot
+
+```{r}
+ggplot(df, aes(x = positive, y = death)) +
+  geom_point(alpha = 0.3, na.rm = TRUE) +
+  labs(
+    title = "COVID Cases vs Deaths",
+    x = "Cumulative Positive Cases",
+    y = "Cumulative Deaths"
+  ) 
+  
+
+df %>%
+  filter(state == "NY") %>%
+  ggplot(aes(x = date, y = positive)) +
+  geom_line() +
+  labs(
+    title = "Cumulative COVID Cases in New York Over Time",
+    x = "Date",
+    y = "Cumulative Positive Cases"
+  ) 
+ 
+
+df %>%
+  filter(state == "NY") %>%
+  ggplot(aes(x = positive, y = death)) +
+  geom_point(alpha = 0.2, na.rm = TRUE) +
+  geom_smooth(se = FALSE, na.rm = TRUE) +
+  labs(
+    title = "Relationship Between COVID Cases and Deaths in NY",
+    x = "Cumulative Positive Cases",
+    y = "Cumulative Deaths"
+  )
+```
+
+## 4 For one continuous + one categorical variables - Density - BoxPlot
+
+```{r}
+selected_states <- df %>%
+  filter(state %in% c("NY", "CA", "TX", "FL", "MA"))
+
+
+# Density Plot
+ggplot(selected_states,
+       aes(x = positiveIncrease, fill = state)) +
+  geom_density(alpha = 0.3, na.rm = TRUE) +
+  labs(
+    title = "Daily COVID Case Increases by State",
+    x = "Daily Increase in Positive Cases",
+    y = "Density",
+    fill = "State"
+  ) 
+  
+ggplot(selected_states,
+       aes(x = state, y = positiveIncrease)) +
+  geom_boxplot(na.rm = TRUE) +
+  labs(
+    title = "Daily COVID Case Increases by State",
+    x = "State",
+    y = "Daily Increase in Positive Cases"
+  ) 
+  
+
+```
+
+## 5 For two categorical variables: barplot
+ 
+```{r}
+selected_states <- selected_states %>%
+  mutate(
+    case_level = if_else(
+      positiveIncrease >= 1000,
+      "1,000 or more",
+      "Under 1,000"
+    )
+  )
+
+ggplot(selected_states,
+       aes(x = state, fill = case_level)) +
+  geom_bar(position = "dodge") +
+  labs(
+    title = "Frequency of High and Low Case-Increase Days by State",
+    x = "State",
+    y = "Number of Days",
+    fill = "Daily Case Increase"
+  ) 
+  
+
+```
+
+## 6 A plot that contains three variables
+
+```{r}
+
+ggplot(selected_states,
+       aes(x = date, y = positiveIncrease, color = state)) +
+  geom_line(na.rm = TRUE) +
+  labs(
+    title = "Daily COVID Case Increases Over Time by State",
+    x = "Date",
+    y = "Daily Increase in Positive Cases",
+    color = "State"
+  ) 
+ 
+```
