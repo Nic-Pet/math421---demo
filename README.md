@@ -18,3 +18,6 @@
 
 [Assignment 6](Assignment 6.html)
 
+[Link to the plot](abc.png)
+
+[Assignment 7](Assignment 7.html)

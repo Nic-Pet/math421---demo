@@ -59,10 +59,10 @@ ggplot(df, aes(y = positiveIncrease)) +
 
 ```{r}
 
-ggplot(df, aes(x = state)) +
+ggplot(df, aes(x = positiveScore,)) +
   geom_bar(fill = "steelblue") +
   labs(
-    title = "Number of Observations by State",
+    title = "",
     x = "State",
     y = "Number of Observations"
   ) 
@@ -97,7 +97,7 @@ df %>%
 df %>%
   filter(state == "NY") %>%
   ggplot(aes(x = positive, y = death)) +
-  geom_point(alpha = 0.2, na.rm = TRUE) +
+  geom_point(alpha = 0.9, na.rm = TRUE) +
   geom_smooth(se = FALSE, na.rm = TRUE) +
   labs(
     title = "Relationship Between COVID Cases and Deaths in NY",
@@ -109,8 +109,6 @@ df %>%
 ## 4 For one continuous + one categorical variables - Density - BoxPlot
 
 ```{r}
-selected_states <- df %>%
-  filter(state %in% c("NY", "CA", "TX", "FL", "MA"))
 
 
 # Density Plot
@@ -139,6 +137,13 @@ ggplot(selected_states,
 ## 5 For two categorical variables: barplot
  
 ```{r}
+
+selected_states <- df %>%
+  filter(state %in% c("RI", "MA"),
+    date >= as.Date("2020-05-01"),
+    date <= as.Date("2020-08-01")
+  )
+
 selected_states <- selected_states %>%
   mutate(
     case_level = if_else(
