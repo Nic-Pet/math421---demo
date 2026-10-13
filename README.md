@@ -21,3 +21,5 @@
 [Link to the plot](abc.png)
 
 [Assignment 7](Assignment 7.html)
+
+[Assignment 7 Extra Credit](Assignment 7 Extra Credit.html)

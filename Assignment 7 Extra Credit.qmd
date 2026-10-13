@@ -1,0 +1,112 @@
+---
+title: "Assignment 7 Extra Credit"
+format: html
+editor: visual
+---
+
+
+##Q1
+```{r}
+library(tidyverse)
+library(ggplot2)
+
+df <- read_csv(
+  "https://bryantstats.github.io/math421/data/ds_salaries.csv",
+  show_col_types = FALSE
+)
+
+head(df)
+ 
+```
+
+##Q2
+```{r}
+colSums(is.na(df))
+ 
+```
+
+##Q3
+```{r}
+df %>%
+  count(job_title, sort = TRUE) %>%
+  head(1)
+ 
+```
+
+##Q4
+```{r}
+df %>%
+  count(job_title, sort = TRUE) %>%
+  head(3) %>%
+  select(job_title) %>%
+  left_join(df, by = "job_title") %>%
+  group_by(job_title) %>%
+  summarise(
+    average_salary = mean(salary_in_usd, na.rm = TRUE)
+  ) %>%
+  arrange(desc(average_salary))
+ 
+```
+
+##Q5
+```{r}
+df %>%
+  group_by(job_title) %>%
+  summarise(
+    average_salary = mean(salary_in_usd, na.rm = TRUE)
+  ) %>%
+  arrange(desc(average_salary)) %>%
+  head(1)
+ 
+```
+
+##Q6
+```{r}
+df %>%
+  group_by(company_location) %>%
+  summarise(
+    average_salary = mean(salary_in_usd, na.rm = TRUE)
+  ) %>%
+  arrange(desc(average_salary)) %>%
+  head(1)
+ 
+```
+
+##Q7
+```{r}
+ggplot(df, aes(x = salary_in_usd)) +
+  geom_histogram(bins = 30) +
+  labs(title = "Salary Distribution",
+       x = "Salary (USD)",
+       y = "Count",
+       caption = "Data Science Salaries")
+
+ggplot(df, aes(x = experience_level, y = salary_in_usd)) +
+  geom_boxplot() +
+  labs(title = "Salary by Experience Level",
+       x = "Experience Level",
+       y = "Salary (USD)",
+       caption = "Data Science Salaries")
+
+ggplot(df, aes(x = experience_level)) +
+  geom_bar() +
+  labs(title = "Jobs by Experience Level",
+       x = "Experience Level",
+       y = "Count",
+       caption = "Data Science Salaries")
+
+ggplot(df, aes(x = company_size, y = salary_in_usd)) +
+  geom_boxplot() +
+  labs(title = "Salary by Company Size",
+       x = "Company Size",
+       y = "Salary (USD)",
+       caption = "Data Science Salaries")
+
+ggplot(df, aes(x = employment_type)) +
+  geom_bar() +
+  labs(title = "Jobs by Employment Type",
+       x = "Employment Type",
+       y = "Count",
+       caption = "Data Science Salaries")
+ 
+```
