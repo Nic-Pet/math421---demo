@@ -23,3 +23,7 @@
 [Assignment 7](Assignment 7.html)
 
 [Assignment 7 Extra Credit](Assignment 7 Extra Credit.html)
+
+[Assignment 8](Assignment 8.html)
+
+[Assignment 9](Assignment 9.html)
