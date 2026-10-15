@@ -1,0 +1,99 @@
+---
+title: "Assignment 9"
+format: html
+editor: visual
+---
+
+
+
+## Setup
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+library(gganimate)
+library(gifski)
+```
+
+## Q1
+
+```{r}
+who <- read_csv("WHO-COVID-19-global-data.csv")
+
+top3 <- who %>%
+  filter(Date_reported == max(Date_reported)) %>%
+  arrange(-Cumulative_deaths) %>%
+  head(3)
+
+top3
+```
+
+## Q2
+
+```{r}
+who2 <- who %>%
+  filter(Country %in% top3$Country)
+
+ggplot(who2, aes(x = Date_reported, y = Cumulative_deaths, color = Country)) +
+  geom_line() +
+  labs(
+    title = "COVID-19 Deaths Over Time",
+    x = "Date",
+    y = "Total Deaths",
+    caption = "Source: WHO COVID-19 Data"
+  ) +
+  transition_reveal(Date_reported)
+```
+
+## Q3
+
+```{r}
+who <- who %>%
+  mutate(death_per_cases = Cumulative_deaths / Cumulative_cases)
+
+top3_rate <- who %>%
+  filter(Date_reported == max(Date_reported),
+         Cumulative_cases > 0) %>%
+  arrange(-death_per_cases) %>%
+  head(3)
+
+top3_rate
+```
+
+## Q4
+
+```{r}
+who3 <- who %>%
+  filter(Country %in% c("United States of America", "Italy", "Mexico"))
+
+ggplot(who3, aes(x = Date_reported, y = death_per_cases, color = Country)) +
+  geom_line() +
+  labs(
+    title = "COVID-19 Deaths per Case",
+    x = "Date",
+    y = "Deaths per Case",
+    caption = "Comparison of the US, Italy, and Mexico"
+  ) +
+  transition_reveal(Date_reported)
+```
+
+## Q5
+
+```{r}
+vacc <- read_csv("vaccinations.csv")
+
+vacc2 <- vacc %>%
+  filter(location %in% c("High income", "Upper middle income",
+                         "Lower middle income", "Low income"))
+
+ggplot(vacc2, aes(x = date, y = total_vaccinations_per_hundred,
+                  color = location)) +
+  geom_line() +
+  labs(
+    title = "COVID-19 Vaccinations by Income Level",
+    x = "Date",
+    y = "Total Vaccinations per 100 People",
+    caption = "Higher-income countries generally vaccinated faster than lower-income countries."
+  ) +
+  transition_reveal(date)
+```

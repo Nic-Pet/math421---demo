@@ -1,0 +1,92 @@
+---
+title: "Assignment 8"
+format: html
+editor: visual
+---
+
+
+
+## Setup
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+library(gganimate)
+library(gifski)
+```
+
+## Q1
+
+```{r}
+adult <- read_csv("adult_census_missing.csv")
+
+ggplot(adult, aes(x = age, y = hours.per.week)) +
+  geom_point(alpha = 0.3) +
+  labs(
+    title = "Age vs Hours Worked: {closest_state}",
+    x = "Age",
+    y = "Hours Worked per Week",
+    caption = "Adult Census Income"
+  ) +
+  transition_states(income)
+```
+
+## Q2
+
+```{r}
+ggplot(adult, aes(x = education)) +
+  geom_bar() +
+  coord_flip() +
+  labs(
+    title = "Education Levels: {closest_state}",
+    x = "Education",
+    y = "Count",
+    caption = "Adult Census Income"
+  ) +
+  transition_states(income)
+```
+
+## Q3
+
+```{r}
+who <- read_csv("https://bryantstats.github.io/math421/data/WHO-COVID-19-global-data.csv")
+
+who2 <- who %>%
+  mutate(month = format(as.Date(Date_reported), "%Y-%m")) %>%
+  filter(substr(month, 1, 4) == "2021") %>%
+  group_by(month, Country) %>%
+  summarise(deaths = sum(New_deaths, na.rm = TRUE), .groups = "drop") %>%
+  group_by(month) %>%
+  slice_max(deaths, n = 10)
+
+ggplot(who2, aes(x = reorder(Country, deaths), y = deaths, fill = Country)) +
+  geom_col() +
+  coord_flip() +
+  labs(title = "COVID Deaths: {closest_state}",
+       x = "Country", y = "Deaths") +
+  transition_states(month)
+```
+
+
+## Q4
+
+```{r}
+df <- read_csv("https://bryantstats.github.io/math421/data/all-states-history.csv")
+
+df2 <- df %>%
+  mutate(month = format(date, "%Y-%m")) %>%
+  group_by(month, state) %>%
+  summarise(deaths = sum(deathIncrease, na.rm = TRUE), .groups = "drop") %>%
+  group_by(month) %>%
+  slice_max(deaths, n = 10)
+
+ggplot(df2, aes(x = reorder(state, deaths), y = deaths, fill = state)) +
+  geom_col() +
+  coord_flip() +
+  labs(title = "COVID Deaths by State: {closest_state}",
+       x = "State", y = "Deaths") +
+  transition_states(month)
+```
+
+
+
