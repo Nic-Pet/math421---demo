@@ -137,33 +137,49 @@ ggplot(selected_states,
 ## 5 For two categorical variables: barplot
  
 ```{r}
+library(tidyverse)
 
+# 1. Reload original dataset
+df <- read_csv("https://bryantstats.github.io/math421/data/all-states-history.csv")
+
+# 2. Fix date format
+df <- df %>%
+  mutate(date = as.Date(as.character(date), tryFormats = c("%Y-%m-%d", "%Y%m%d", "%m/%d/%Y")))
+
+# 3. Filter states and dates
 selected_states <- df %>%
-  filter(state %in% c("RI", "MA"),
+  filter(
+    state %in% c("CA", "FL"),
     date >= as.Date("2020-05-01"),
-    date <= as.Date("2020-08-01")
+    date <= as.Date("2021-08-01"),
+    !is.na(hospitalized)
   )
 
+# 4. Calculate average daily deaths for each state
 selected_states <- selected_states %>%
+  group_by(state) %>%
   mutate(
-    case_level = if_else(
-      positiveIncrease >= 1000,
-      "1,000 or more",
-      "Under 1,000"
+    
+    hospitalized_median = median(hospitalized, na.rm = TRUE),
+    hospitalized_category = if_else(
+      hospitalized >= hospitalized_median,
+      "Above Mean",
+      "Below Mean"
     )
-  )
+  ) %>%
+  ungroup()
 
+# 5. Create graph
 ggplot(selected_states,
-       aes(x = state, fill = case_level)) +
+       aes(x = state, fill = hospitalized_category)) +
   geom_bar(position = "dodge") +
   labs(
-    title = "Frequency of High and Low Case-Increase Days by State",
+    title = "Days Above and Below Average Daily Deaths",
     x = "State",
     y = "Number of Days",
-    fill = "Daily Case Increase"
-  ) 
-  
-
+    fill = "Daily Deaths"
+  ) +
+  theme_minimal()
 ```
 
 ## 6 A plot that contains three variables

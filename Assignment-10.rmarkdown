@@ -1,0 +1,216 @@
+---
+title: "Assignment 10"
+format: html
+editor: visual
+---
+
+## Setup
+
+```{r}
+library(tidyverse)
+library(rpart)
+library(rpart.plot)
+library(randomForest)
+```
+
+## Q1
+
+```{r}
+
+# Import dataset
+who <- read_csv("adult_census_missing.csv")
+
+# Remove missing values
+who <- na.omit(who)
+
+# Make income categorical
+who$income <- as.factor(trimws(who$income))
+
+# Convert character columns to factors
+who <- who %>%
+  mutate(across(where(is.character), as.factor))
+
+# Split data
+set.seed(123)
+
+index <- sample(1:nrow(who), 0.8 * nrow(who))
+
+train <- who[index, ]
+test <- who[-index, ]
+
+# Handle categories not present in training data
+for (col in names(train)) {
+  if (is.factor(train[[col]]) && col != "income") {
+
+    # Find categories that appear fewer than 10 times in training
+    counts <- table(train[[col]])
+    common <- names(counts[counts >= 10])
+
+    # Group rare and unseen categories into "Other"
+    train[[col]] <- as.character(train[[col]])
+    test[[col]] <- as.character(test[[col]])
+
+    train[[col]][!train[[col]] %in% common] <- "Other"
+    test[[col]][!test[[col]] %in% common] <- "Other"
+
+    # Ensure identical levels
+    train[[col]] <- factor(train[[col]])
+    test[[col]] <- factor(test[[col]], levels = levels(train[[col]]))
+  }
+}
+
+# Check data
+nrow(train)
+nrow(test)
+```
+
+## Q2
+
+```{r}
+
+# Create decision tree
+tree1 <- rpart(
+  income ~ .,
+  data = train,
+  method = "class",
+  control = rpart.control(maxdepth = 3, cp = 0.001)
+)
+
+# Predict
+pred1 <- predict(tree1, test, type = "class")
+
+# Calculate accuracy
+accuracy1 <- mean(pred1 == test$income)
+accuracy1
+
+# Plot decision tree
+rpart.plot(tree1)
+
+# Plot variable importance
+barplot(
+  sort(tree1$variable.importance, decreasing = TRUE),
+  las = 2,
+  main = "Decision Tree Variable Importance"
+)
+
+```
+
+## Q3
+
+```{r}
+# Create three additional trees
+tree2 <- rpart(
+  income ~ ., data = train, method = "class",
+  control = rpart.control(maxdepth = 5, cp = 0.001)
+)
+
+tree3 <- rpart(
+  income ~ ., data = train, method = "class",
+  control = rpart.control(maxdepth = 7, cp = 0.001)
+)
+
+tree4 <- rpart(
+  income ~ ., data = train, method = "class",
+  control = rpart.control(maxdepth = 10, cp = 0.001)
+)
+
+# Calculate accuracy for all four trees
+accuracy1 <- mean(predict(tree1, test, type = "class") == test$income)
+accuracy2 <- mean(predict(tree2, test, type = "class") == test$income)
+accuracy3 <- mean(predict(tree3, test, type = "class") == test$income)
+accuracy4 <- mean(predict(tree4, test, type = "class") == test$income)
+
+# Compare testing accuracy
+tree_results <- data.frame(
+  Model = c("Tree Depth 3", "Tree Depth 5",
+            "Tree Depth 7", "Tree Depth 10"),
+  Accuracy = c(accuracy1, accuracy2, accuracy3, accuracy4)
+)
+
+tree_results
+
+# Best decision tree
+tree_results[which.max(tree_results$Accuracy), ]
+```
+
+## Q4
+
+```{r}
+set.seed(123)
+
+# Create random forest
+forest1 <- randomForest(
+  income ~ .,
+  data = train,
+  ntree = 1000,
+  importance = TRUE
+)
+
+# Predict
+pred_f1 <- predict(forest1, test)
+
+# Calculate accuracy
+accuracy_f1 <- mean(pred_f1 == test$income)
+accuracy_f1
+
+# Plot variable importance
+varImpPlot(forest1)
+```
+
+## Q5
+
+```{r}
+set.seed(123)
+
+# Create three additional forests
+forest2 <- randomForest(
+  income ~ ., data = train,
+  ntree = 100, importance = TRUE
+)
+
+forest3 <- randomForest(
+  income ~ ., data = train,
+  ntree = 500, importance = TRUE
+)
+
+forest4 <- randomForest(
+  income ~ ., data = train,
+  ntree = 1500, importance = TRUE
+)
+
+# Calculate testing accuracy
+accuracy_f1 <- mean(predict(forest1, test) == test$income)
+accuracy_f2 <- mean(predict(forest2, test) == test$income)
+accuracy_f3 <- mean(predict(forest3, test) == test$income)
+accuracy_f4 <- mean(predict(forest4, test) == test$income)
+
+# Compare random forests
+forest_results <- data.frame(
+  Model = c("Forest 1000", "Forest 100",
+            "Forest 500", "Forest 1500"),
+  Accuracy = c(accuracy_f1, accuracy_f2,
+               accuracy_f3, accuracy_f4)
+)
+
+forest_results
+
+# Best random forest
+forest_results[which.max(forest_results$Accuracy), ]
+```
+
+## Q6
+
+```{r}
+# Combine all models
+all_results <- rbind(tree_results, forest_results)
+
+# Sort by testing accuracy
+all_results <- all_results %>%
+  arrange(desc(Accuracy))
+
+# Display all results
+all_results
+
+# Best model
+all_results[1, ]
+```

@@ -1,0 +1,153 @@
+---
+title: "Assignment 12"
+format: html
+editor: visual
+---
+
+## Setup
+```{r}
+
+library(mlbench)
+library(tidyverse)
+library(caret)
+
+data(PimaIndiansDiabetes)
+df <- tibble(PimaIndiansDiabetes)
+
+# Set target variable
+df <- df %>%
+  rename(target = diabetes)
+
+# Split data (85% training, 15% testing)
+set.seed(123)
+
+splitIndex <- createDataPartition(df$target, p = .85,
+                                  list = FALSE)
+
+df_train <- df[splitIndex, ]
+df_test <- df[-splitIndex, ]
+
+# 7-fold cross-validation
+trControl <- trainControl(method = "cv",
+                          number = 7)
+
+```
+
+## Q1
+```{r}
+# Check parameters
+getModelInfo("ranger")$ranger$parameters
+
+# Set tuning parameters
+tuneGrid <- expand.grid(
+  mtry = 2:4,
+  splitrule = c("gini", "extratrees"),
+  min.node.size = 1:10
+)
+
+# Train random forest
+set.seed(123)
+
+forest_ranger <- train(target ~ ., data = df_train,
+                       method = "ranger",
+                       trControl = trControl,
+                       tuneGrid = tuneGrid)
+
+# Plot tuning results
+plot(forest_ranger)
+
+# Show results
+print(forest_ranger)
+
+# Best parameters
+forest_ranger$bestTune
+
+# Test accuracy
+pred <- predict(forest_ranger, df_test)
+
+cm <- confusionMatrix(data = pred,
+                      reference = df_test$target,
+                      positive = "pos")
+
+cm$overall[1]
+```
+
+## Q2
+```{r}
+# Set tuning parameters
+tuneGrid2 <- expand.grid(maxdepth = 2:10)
+
+# Train Decision Tree
+set.seed(123)
+
+tree <- train(target ~ ., data = df_train,
+              method = "rpart2",
+              trControl = trControl,
+              tuneGrid = tuneGrid2)
+
+# Plot tuning results
+plot(tree)
+
+# Show results
+print(tree)
+
+# Best parameter
+tree$bestTune
+
+# Test accuracy
+pred2 <- predict(tree, df_test)
+
+cm2 <- confusionMatrix(data = pred2,
+                       reference = df_test$target,
+                       positive = "pos")
+
+cm2$overall[1]
+```
+
+## Q3
+```{r}
+# Train Decision Tree
+set.seed(123)
+
+tree3 <- train(target ~ ., data = df_train,
+               method = "rpart2",
+               trControl = trControl)
+
+# Train Linear Discriminant Analysis
+set.seed(123)
+
+lda <- train(target ~ ., data = df_train,
+             method = "lda",
+             trControl = trControl)
+
+# Compare models
+results <- resamples(list("Decision Tree" = tree3,
+                          "LDA" = lda))
+
+# Plot comparison
+bwplot(results)
+
+# Show comparison
+summary(results)
+
+# Select the model with higher CV accuracy
+accuracy_tree <- max(tree3$results$Accuracy)
+accuracy_lda <- max(lda$results$Accuracy)
+
+if (accuracy_tree >= accuracy_lda) {
+  final_model <- tree3
+  print("Decision Tree is the best model")
+} else {
+  final_model <- lda
+  print("LDA is the best model")
+}
+
+# Test final model
+pred3 <- predict(final_model, df_test)
+
+cm3 <- confusionMatrix(data = pred3,
+                       reference = df_test$target,
+                       positive = "pos")
+
+cm3$overall[1]
+```
