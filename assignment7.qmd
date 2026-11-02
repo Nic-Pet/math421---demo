@@ -20,11 +20,22 @@ editor: visual
 knitr::opts_chunk$set(message = FALSE, warning = FALSE)
 ```
 
-------------------------------------------------------------------------
+# See all unique categories
+unique(df$state)
 
-Use the data of your own. Produce the following types of plots and comment on each plot. Plots should be meaningful. If you use the data we used in class, make sure the plots are not the same as the ones in the slides. All plots should have title, caption, appropriate labels on x and y-axis.
+# Count how many different categories exist
+n_distinct(df$state)
 
-------------------------------------------------------------------------
+# See how many observations belong to each category
+table(df$state)
+
+# See categories and their counts using tidyverse
+df %>%
+  count(state)
+
+# See the categories ordered from most to least frequent
+df %>%
+  count(state, sort = TRUE)
 
 library(tidyverse) library(ggplot2)
 
@@ -255,6 +266,25 @@ d1 %>%
   geom_point(mapping=aes(x=date, 
                          y=total_vac2, 
                          color=location))
+
+
+```
+
+```{r}
+# the total vaccines (including all types of vaccines) by date
+d2 <- df %>% 
+  filter(vaccine %in% c('Oxford/AstraZeneca', 'Sinopharm/Beijing')) %>% 
+  group_by(date, vaccine) %>% 
+  summarise(total_vac2=sum(total_vaccinations, na.rm=TRUE))
+
+# Plot
+d2 %>% 
+  ggplot()+
+  geom_point(mapping=aes(x=date, 
+                         y=total_vac2, 
+                         color=vaccine))
+
+
 ```
 
 Notice that the above codes could be piped in one

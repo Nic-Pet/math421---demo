@@ -4,8 +4,6 @@ format: html
 editor: visual
 ---
 
-
-
 ## Setup
 
 ```{r}
@@ -70,7 +68,7 @@ ggplot(who3, aes(x = Date_reported, y = death_per_cases, color = Country)) +
   geom_line() +
   labs(
     title = "COVID-19 Deaths per Case",
-    x = "Date",
+    x = "Date, from 2020 till 2022",
     y = "Deaths per Case",
     caption = "Comparison of the US, Italy, and Mexico"
   ) +

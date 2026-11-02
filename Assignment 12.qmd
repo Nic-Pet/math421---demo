@@ -5,6 +5,7 @@ editor: visual
 ---
 
 ## Setup
+
 ```{r}
 
 library(mlbench)
@@ -34,6 +35,7 @@ trControl <- trainControl(method = "cv",
 ```
 
 ## Q1
+
 ```{r}
 # Check parameters
 getModelInfo("ranger")$ranger$parameters
@@ -73,6 +75,7 @@ cm$overall[1]
 ```
 
 ## Q2
+
 ```{r}
 # Set tuning parameters
 tuneGrid2 <- expand.grid(maxdepth = 2:10)
@@ -105,6 +108,7 @@ cm2$overall[1]
 ```
 
 ## Q3
+
 ```{r}
 # Train Decision Tree
 set.seed(123)

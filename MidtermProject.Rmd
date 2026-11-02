@@ -1,0 +1,849 @@
+---
+title: "MidtermProject"
+output:
+  slidy_presentation: default
+  ioslides_presentation: default
+date: "2026-10-22"
+---
+
+## Setup
+```{r, include=FALSE}
+# Load libraries
+library(haven)
+library(tidyverse)
+library(tidyverse)
+library(ggplot2)
+library(dplyr)
+
+# Import dataset
+df1 <- read_sas("hdd0318cy.sas7bdat")
+
+# Examine dataset
+dim(df)
+names(df)
+head(df)
+
+# Create a random sample of 1000 patients
+##set.seed(123)
+
+## n <- nrow(df)
+## df1 <- df[sample(1:n, min(1000, n)), ]
+```
+
+
+```{r, include=FALSE}
+##Q1-7
+
+
+dfN = df1 %>%
+  filter(yod == 18) %>%
+  select( yod, payfix, pay_ub92, age,
+    sex, raceethn, provider, moa,
+    yoa, mod, admtype, asource,
+    preopday, los, service, icu, ccu,
+    dispub92, payer, drg, trandb,
+    randbg, randbs, orr, anes, seq,
+    lab, dtest, ther, blood, phar,
+    other, patcon, bwght, total, tot,
+    ecodub92, b_wt, pt_state, diag_adm,
+    ancilar, campus, er_fee, er_chrg,
+    er_mode, obs_chrg, obs_hour,
+    psycchrg, nicu_day)
+
+colSums(is.na(dfN))
+dfN <- dfN[, colSums(is.na(dfN)) == 0]
+colSums(is.na(dfN))
+
+# Labels below follow the Rhode Island Hospital Discharge Data dictionary
+# (HDD2015-18cy6-20-19, revised 6/20/2019). Unknown codes stay visible.
+label_from_dictionary <- function(x, codebook, field) {
+  code <- trimws(as.character(x))
+  key <- toupper(code)
+  numeric_code <- !is.na(code) & grepl("^[0-9]+$", code)
+  key[numeric_code] <- as.character(as.integer(code[numeric_code]))
+  label <- unname(codebook[key])
+  missing <- is.na(code) | code == "" | code %in% c(".A", ".")
+  unknown <- !missing & is.na(label)
+  label[missing] <- "Missing / unknown"
+  label[unknown] <- paste0("Not listed in data dictionary (", field, " code ", code[unknown], ")")
+  label
+}
+
+labelled_factor <- function(x, codebook, field) {
+  labels <- label_from_dictionary(x, codebook, field)
+  levels <- unique(c(unname(codebook), setdiff(unique(labels), unname(codebook))))
+  factor(labels, levels = levels)
+}
+
+month_codes <- c("1" = "January", "2" = "February", "3" = "March",
+                 "4" = "April", "5" = "May", "6" = "June",
+                 "7" = "July", "8" = "August", "9" = "September",
+                 "10" = "October", "11" = "November", "12" = "December")
+
+provider_codes <- c(
+  "7201" = "Newport",
+  "7202" = "St. Joseph Health Services of RI",
+  "7203" = "Memorial",
+  "7204" = "Miriam",
+  "7205" = "Rhode Island Hospital",
+  "7206" = "Roger Williams",
+  "7209" = "South County",
+  "7210" = "Kent County",
+  "7211" = "Westerly",
+  "7212" = "Rehab of RI",
+  "7213" = "Landmark Medical Center",
+  "7214" = "Women and Infants",
+  "7215" = "Bradley",
+  "7216" = "Butler"
+)
+
+admission_type_codes <- c(
+  "1" = "Emergency", "2" = "Urgent",
+  "3" = "Electric (wording in dictionary)", "4" = "Newborn",
+  "5" = "Trauma (as of 2005; court committal before 2005)",
+  "9" = "Information not available"
+)
+
+admission_source_codes <- c(
+  "1" = "Physician referral", "2" = "Clinic referral",
+  "3" = "HMO referral", "4" = "Transfer from another hospital",
+  "5" = "Transfer from nursing facility", "6" = "Transfer from health care facility",
+  "7" = "Emergency room", "8" = "Court / law enforcement",
+  "9" = "Information not available",
+  "Z" = "Emergency room / nursing home",
+  "A" = "Normal birth or transfer from critical access hospital (depends on admission type)",
+  "B" = "Premature birth", "C" = "Sick baby", "D" = "Extramural birth",
+  "E" = "Newborn", "F" = "Still born", "U" = "Normal birth",
+  "V" = "Premature birth", "W" = "Sick baby", "X" = "Extramural birth",
+  "S" = "Born in hospital", "T" = "Born out of hospital"
+)
+
+payer_codes <- c(
+  "0" = "Medicare", "1" = "Medicaid", "4" = "Workers' compensation",
+  "5" = "Blue Cross", "6" = "Commercial insurance", "7" = "Self-pay",
+  "8" = "Other", "B" = "CHAMPUS", "D" = "United Healthcare",
+  "E" = "Coordinated Health Partners Inc.", "G" = "RIte Care",
+  "H" = "Neighborhood Health Plan of RI", "X" = "Insurance error",
+  "Y" = "Missing / unknown", "Z" = "Unknown"
+)
+
+discharge_codes <- c(
+  "0" = "Invalid / missing code (00)",
+  "1" = "Home / self care", "2" = "Another short-term general hospital",
+  "3" = "Skilled nursing facility", "4" = "Intermediate care facility",
+  "5" = "Another type of institution", "6" = "Home with organized home health care",
+  "7" = "Left against medical advice", "8" = "Home with IV care",
+  "9" = "Inpatient at this hospital (Medicare outpatient claim; 2005 onward)",
+  "20" = "Expired", "30" = "Still a patient", "40" = "Expired at home",
+  "41" = "Expired in a medical facility", "42" = "Expired; place unknown",
+  "43" = "Federal health care facility", "50" = "Home with hospice care",
+  "51" = "Medical facility with hospice care",
+  "61" = "Hospital-based Medicare swing bed",
+  "62" = "Inpatient rehabilitation facility",
+  "63" = "Medicare-certified long-term care hospital",
+  "64" = "Medicaid-certified nursing facility (not Medicare-certified)",
+  "65" = "Psychiatric hospital / unit", "66" = "Critical access hospital",
+  "70" = "Other institution not defined elsewhere",
+  "81" = "Home; planned readmission", "82" = "Short-term general hospital; planned readmission",
+  "83" = "Certified skilled nursing facility; planned readmission",
+  "84" = "Custodial care; planned readmission", "85" = "Cancer center; planned readmission",
+  "86" = "Home care; planned readmission", "87" = "Court / law enforcement; planned readmission",
+  "88" = "Federal health care; planned readmission", "89" = "Hospital swing bed; planned readmission",
+  "90" = "Inpatient rehabilitation; planned readmission", "91" = "Long-term care hospital; planned readmission",
+  "92" = "Non-certified nursing facility; planned readmission",
+  "93" = "Psychiatric hospital; planned readmission", "94" = "Critical access hospital; planned readmission",
+  "95" = "Other institution; planned readmission", "99" = "Discharged alive; destination unknown",
+  "PH" = "Butler in-house partial program"
+)
+
+service_codes <- c(
+  "0" = "Not listed in data dictionary (service code 00)",
+  "2" = "Pediatrics", "10" = "Medicine", "22" = "Cardiology",
+  "38" = "Psychiatry", "40" = "Surgery", "48" = "Ophthalmology",
+  "50" = "ENT", "54" = "Oral surgery", "58" = "Orthopedics",
+  "62" = "Urology", "70" = "Gynecology", "75" = "Abortion",
+  "76" = "Obstetrics - not delivered", "77" = "Obstetrics - delivered",
+  "80" = "Newborn", "98" = "Rehabilitation"
+)
+
+dfN <- dfN %>%
+  mutate(
+    moa_label = labelled_factor(moa, month_codes, "MOA"),
+    mod_label = labelled_factor(mod, month_codes, "MOD"),
+    sex_label = labelled_factor(sex, c("1" = "Male", "2" = "Female"), "SEX"),
+    provider_label = labelled_factor(provider, provider_codes, "PROVIDER"),
+    admtype_label = labelled_factor(admtype, admission_type_codes, "ADMTYPE"),
+    asource_label = labelled_factor(asource, admission_source_codes, "ASOURCE"),
+    payer_label = labelled_factor(payer, payer_codes, "PAYER"),
+    dispub92_label = labelled_factor(dispub92, discharge_codes, "DISPUB92"),
+    service_label = labelled_factor(service, service_codes, "SERVICE")
+  )
+  
+```
+
+```{r, include=FALSE}
+## Q7 - Refer to the data description in the file HDD2015-18cy6-20-19.docx, which variable recording the month of admission?, which variable recording the month of discharge?
+##According to the Rhode Island Department of Health documentation (pages 6–7), moa represents the month of admission, and mod represents the month of discharge. Both variables use values from 1 to 12 to represent January through December.
+
+
+```
+
+```{r, include=FALSE}
+## Q8- Which month admitted the most number of patients? Which month admitted the most number of male patients?
+dfN %>%
+  group_by(moa_label) %>%
+  summarise(patients = n()) %>%
+  arrange(desc(patients))
+
+dfN %>%
+  filter(sex == 1) %>%
+  group_by(moa_label) %>%
+  summarise(patients = n()) %>%
+  arrange(desc(patients))
+
+```
+
+```{r, include=FALSE}
+##Q9 - Which month has the most number of teenage female patients?
+dfN %>%
+  filter(sex == 2, age >= 13, age <= 19) %>%
+  group_by(moa_label) %>%
+  summarise(patients = n()) %>%
+  arrange(desc(patients))
+
+```
+
+```{r, include=FALSE}
+## Q10. Which provider had the most female patients in October?
+dfN %>%
+  filter(sex == 2, moa == 10) %>%
+  group_by(provider_label) %>%
+  summarise(patients = n()) %>%
+  arrange(desc(patients))
+```
+
+
+```{r, include=FALSE}
+## Q11. Are female patients older than male patients on average?
+dfN %>%
+  group_by(sex_label) %>%
+  summarise(avg_age = mean(age, na.rm = TRUE))
+```
+
+```{r, include=FALSE}
+## Q12. Calculate average age by month. Which month has the oldest patients?
+dfN %>%
+  group_by(moa_label) %>%
+  summarise(avg_age = mean(age, na.rm = TRUE)) %>%
+  arrange(desc(avg_age))
+```
+
+```{r, include=FALSE}
+## Q13. Which provider has the highest total charge?
+dfN %>%
+  group_by(provider_label) %>%
+  summarise(total_charge = sum(tot, na.rm = TRUE)) %>%
+  arrange(desc(total_charge))
+```
+
+```{r, include=FALSE}
+## Q14. Which provider has the lowest average total charge for teenage males?
+dfN %>%
+  filter(sex == 1, age >= 13, age <= 19) %>%
+  group_by(provider_label) %>%
+  summarise(avg_charge = mean(tot, na.rm = TRUE)) %>%
+  arrange(avg_charge)
+```
+
+```{r, include=FALSE}
+## Q15. Create a season variable and calculate average length of stay.
+dfN <- dfN %>%
+  mutate(season = case_when(
+    moa %in% c(12, 1, 2) ~ "Winter",
+    moa %in% c(3, 4, 5) ~ "Spring",
+    moa %in% c(6, 7, 8) ~ "Summer",
+    moa %in% c(9, 10, 11) ~ "Fall"
+  ))
+
+dfN %>%
+  group_by(season) %>%
+  summarise(avg_los = mean(los, na.rm = TRUE)) %>%
+  arrange(desc(avg_los))
+```
+
+```{r, include=FALSE}
+## Q16. Average charge for a 20-year-old male staying one day in Fall.
+dfN %>%
+  filter(
+    age == 20,
+    sex == 1,
+    los == 1,
+    season == "Fall"
+  ) %>%
+  summarise(
+    avg_charge = mean(tot, na.rm = TRUE),
+    patients = n()
+  )
+```
+
+```{r, include=FALSE}
+## Q17. Write a paragraph summarizing your findings.
+##The Rhode Island Hospital Discharge Data analysis for 2018 revealed several patterns in patient admissions, ages, hospital charges, and length of stay. The month with the highest number of admissions was [month], while [month] had the most male admissions. Female patients had an average age of [age], compared with [age] for males. The provider with the highest total patient charges was [hospital], and [season] had the longest average hospital stay. These results help illustrate differences in hospital utilization throughout the year and across patient groups.
+```
+
+####################################Part2#########################################
+
+## Part 2 — Data Visualization
+## Question next plot 1: Are admitted patients evenly distributed across ages?
+
+
+## Plot 1 — Age Distribution
+
+```{r}
+p <- ggplot(dfN, aes(x = age)) +
+  geom_histogram(binwidth = 5,
+                 fill = "steelblue",
+                 color = "white",
+                 na.rm = TRUE) +
+  labs(title = "Age Distribution of Hospital Patients",
+       x = "Age",
+       y = "Number of Patients") +
+  theme_minimal()
+
+print(p)
+
+## Question next plot: Are more males or females admitted to hospitals?
+```
+
+## Plot 2 — Patients by Sex
+
+```{r}
+p <- dfN %>%
+  filter(!is.na(sex)) %>%
+  ggplot(aes(x = sex_label)) +
+  geom_bar(fill = "steelblue") +
+  labs(title = "Hospital Patients by Sex",
+       x = "Sex",
+       y = "Number of Patients") +
+  theme_minimal()
+
+print(p)
+
+## Question next plot: What is the most common type of hospital admission?
+```
+
+## Plot 3 — Hospital Admissions by Type
+
+```{r}
+p <- dfN %>%
+  filter(!is.na(admtype)) %>%
+  ggplot(aes(x = admtype_label)) +
+  geom_bar(fill = "steelblue") +
+  coord_flip() +
+  labs(title = "Hospital Admissions by Type",
+       x = "Admission Type",
+       y = "Number of Patients") +
+  theme_minimal()
+
+print(p)
+
+## Question next plot: Do older patients stay in hospitals longer?
+table(dfN$sex)
+unique(dfN$sex)
+filter(admtype_label != "Missing / unknown")
+```
+
+## Plot 4 — Average Length of Stay by Age Group
+
+```{r}
+p <- dfN %>%
+  mutate(age_group = cut(age,
+                         breaks = c(0, 18, 40, 65, Inf),
+                         labels = c("0-18", "19-40",
+                                    "41-65", "66+"),
+                         include.lowest = TRUE)) %>%
+  group_by(age_group) %>%
+  summarise(avg_stay = mean(los, na.rm = TRUE),
+            .groups = "drop") %>%
+  ggplot(aes(x = age_group, y = avg_stay)) +
+  geom_col(fill = "steelblue") +
+  labs(title = "Average Hospital Stay by Age Group",
+       x = "Age Group",
+       y = "Average Days in Hospital") +
+  theme_minimal()
+
+print(p)
+
+## Question next plot: Which hospitals charge the most per patient on average?
+```
+
+## Plot 5 — Average Patient Charges by Hospital
+
+```{r}
+p <- dfN %>%
+  group_by(provider_label) %>%
+  summarise(avg_charge = mean(tot, na.rm = TRUE),
+            .groups = "drop") %>%
+  ggplot(aes(x = reorder(provider_label, avg_charge),
+             y = avg_charge)) +
+  geom_col(fill = "steelblue") +
+  coord_flip() +
+  scale_y_continuous(labels = scales::dollar) +
+  labs(title = "Average Patient Charges by Hospital",
+       x = "Hospital",
+       y = "Average Charge ($)") +
+  theme_minimal()
+
+print(p)
+
+## Question next plot: Does staying longer in a hospital mean higher charges?
+```
+
+## Plot 6 — Hospital Charges vs. Length of Stay
+
+```{r}
+p <- dfN %>%
+  filter(!is.na(los), !is.na(tot),
+         los >= 0, tot > 0) %>%
+  ggplot(aes(x = los, y = tot)) +
+  geom_point(alpha = 0.2, color = "steelblue") +
+  scale_y_log10(labels = scales::dollar) +
+  labs(title = "Hospital Charges vs. Length of Stay",
+       x = "Length of Stay (Days)",
+       y = "Total Charges ($, log scale)") +
+  theme_minimal()
+
+print(p)
+
+## Question next plot: Which hospital services generate the most charges?
+
+```
+
+## Plot 7 — Hospital Charges by Service Category
+
+```{r}
+p <- dfN %>%
+  mutate(across(c(trandb, orr, lab, phar, dtest, ther),
+                as.numeric)) %>%
+  summarise(
+    Room_Board = sum(trandb, na.rm = TRUE),
+    Operating_Room = sum(orr, na.rm = TRUE),
+    Laboratory = sum(lab, na.rm = TRUE),
+    Pharmacy = sum(phar, na.rm = TRUE),
+    Diagnostic_Tests = sum(dtest, na.rm = TRUE),
+    Therapy = sum(ther, na.rm = TRUE)
+  ) %>%
+  pivot_longer(everything(),
+               names_to = "category",
+               values_to = "charges") %>%
+  ggplot(aes(x = reorder(category, charges),
+             y = charges)) +
+  geom_col(fill = "steelblue") +
+  coord_flip() +
+  scale_y_continuous(labels = scales::dollar) +
+  labs(title = "Hospital Charges by Service Category",
+       x = "Service Category",
+       y = "Total Charges ($)") +
+  theme_minimal()
+
+print(p)
+
+## Question next plot: Do hospital charges differ depending on insurance?
+
+```
+
+## Plot 8 — Hospital Charges by Insurance Payer
+
+```{r}
+p <- dfN %>%
+  filter(!is.na(payer), !is.na(tot), tot > 0) %>%
+  ggplot(aes(x = payer_label, y = tot)) +
+  geom_boxplot(fill = "lightblue") +
+  coord_flip() +
+  scale_y_log10(labels = scales::dollar) +
+  labs(title = "Hospital Charges by Insurance Payer",
+       x = "Expected Source of Payment",
+       y = "Total Charges ($, log scale)") +
+  theme_minimal()
+
+print(p)
+
+## Question next plot: Are more patients admitted during certain months?
+
+```
+
+## Plot 9 — Hospital Admissions by Month
+
+```{r}
+p <- dfN %>%
+  filter(!is.na(moa)) %>%
+  ggplot(aes(x = moa_label)) +
+  geom_bar(fill = "steelblue") +
+  labs(title = "Hospital Admissions by Month",
+       x = "Month",
+       y = "Number of Patients") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45,
+                                   hjust = 1))
+
+print(p)
+
+## Question next plot: What happens to most patients after leaving the hospital?
+
+
+```
+
+## Plot 10 — Most Common Hospital Discharge Outcomes
+
+```{r}
+p <- dfN %>%
+  filter(!is.na(dispub92)) %>%
+  count(dispub92_label, sort = TRUE) %>%
+  slice_head(n = 6) %>%
+  ggplot(aes(x = reorder(dispub92_label, n),
+             y = n)) +
+  geom_col(fill = "steelblue") +
+  coord_flip() +
+  labs(title = "Most Common Hospital Discharge Outcomes",
+       x = "Discharge Outcome",
+       y = "Number of Patients") +
+  theme_minimal()
+
+print(p)
+
+## Question next plot: Which hospitals admit the most patients each month?
+
+```
+
+## Animation — Monthly Hospital Admissions by Hospital
+
+```{r}
+library(gganimate)
+
+p <- df2 <- dfN %>%
+  group_by(moa, moa_label, provider_label) %>%
+  summarise(patients = n(), .groups = "drop") %>%
+  group_by(moa) %>%
+  slice_max(patients, n = 10, with_ties = FALSE)
+
+ggplot(df2, aes(x = reorder(provider_label, patients),
+                y = patients,
+                fill = provider_label)) +
+  geom_col() +
+  coord_flip() +
+  labs(title = "Hospital Admissions: {closest_state}",
+       x = "Hospital",
+       y = "Number of Patients",
+       fill = "Hospital") +
+  transition_states(moa_label) +
+  theme_minimal()
+
+print(p)
+```
+
+
+
+# Part 3
+
+
+
+```{r, include=FALSE}
+## Setup
+library(tidyverse)
+library(caret)
+library(rpart)
+library(rpart.plot)
+library(randomForest)
+
+set.seed(123)
+```
+
+
+
+```{r, include=FALSE}
+## Question 1
+# Select variables and remove missing values
+df3 <- dfN %>%
+  select(tot, age, sex, raceethn, provider, moa,
+         mod, admtype, campus, los) %>%
+  filter(raceethn != "", admtype != "") %>%
+  mutate(
+    age = as.numeric(age),
+    los = as.numeric(los),
+    tot = as.numeric(tot)
+  ) %>%
+  drop_na()
+
+# Create target
+med <- median(df3$tot)
+
+df3 <- df3 %>%
+  mutate(target = factor(ifelse(tot < med, "low", "high"))) %>%
+  select(-tot)
+
+# Convert categorical variables to factors
+df3 <- df3 %>%
+  mutate(across(c(sex, raceethn, provider, moa,
+                  mod, admtype, campus), as.factor))
+
+# Training 10%, Testing 90%
+set.seed(123)
+
+index <- createDataPartition(df3$target, p = 0.10, list = FALSE)
+
+train1 <- df3[index, ]
+test1 <- df3[-index, ]
+
+nrow(train1)
+nrow(test1)
+table(train1$target)
+```
+
+
+
+```{r, include=FALSE}
+## Question 2
+# Decision tree
+tree1 <- rpart(target ~ ., data = train1,
+               method = "class",
+               control = rpart.control(minsplit = 2, cp = 0.001))
+
+rpart.plot(tree1)
+
+# Variable importance
+if (!is.null(tree1$variable.importance)) {
+  barplot(sort(tree1$variable.importance),
+          horiz = TRUE,
+          las = 1,
+          col = "steelblue",
+          main = "Variable Importance")
+} else {
+  print("Tree has no splits.")
+}
+```
+
+
+
+```{r, include=FALSE}
+## Question 3
+# 5-fold cross-validation
+control <- trainControl(method = "cv", number = 5)
+
+# Decision tree
+set.seed(123)
+
+model1 <- train(
+  target ~ .,
+  data = train1,
+  method = "rpart",
+  trControl = control,
+  tuneGrid = data.frame(cp = c(0.001, 0.005, 0.01, 0.05, 0.1)),
+  control = rpart.control(minsplit = 2, xval = 0)
+)
+
+# Random forest2
+set.seed(123)
+
+model2 <- train(
+  target ~ .,
+  data = train1,
+  method = "rf",
+  trControl = control,
+  tuneGrid = data.frame(mtry = c(1, 2, 3)),
+  ntree = 100
+)
+
+# Results
+model1
+model2
+
+# Tuning plots
+plot(model1)
+plot(model2)
+```
+
+## Question 4
+
+```{r}
+# Compare models
+comparison <- resamples(list(Tree = model1, Forest = model2))
+
+summary(comparison)
+
+dotplot(comparison, metric = "Accuracy")
+```
+
+## Question 5
+
+```{r}
+# Compare accuracy
+accuracy1 <- max(model1$results$Accuracy)
+accuracy2 <- max(model2$results$Accuracy)
+
+accuracy1
+accuracy2
+
+# Select best model
+if (accuracy1 >= accuracy2) {
+  final_model <- model1
+} else {
+  final_model <- model2
+}
+
+final_model
+
+# Test predictions
+pred <- predict(final_model, test1)
+
+confusionMatrix(pred, test1$target)
+
+# Test accuracy
+mean(pred == test1$target)
+```
+
+## Question 6 — Second Target
+
+Predict whether a patient has a short or long hospital stay.
+
+```{r}
+# Select variables and remove missing values
+df4 <- dfN %>%
+  select(los, age, sex, raceethn, provider,
+         moa, mod, admtype, campus) %>%
+  filter(raceethn != "", admtype != "") %>%
+  mutate(
+    age = as.numeric(age),
+    los = as.numeric(los)
+  ) %>%
+  drop_na()
+
+# Create target
+med2 <- median(df4$los)
+
+df4 <- df4 %>%
+  mutate(target = factor(ifelse(los > med2, "long", "short"))) %>%
+  select(-los)
+
+# Convert categorical variables
+df4 <- df4 %>%
+  mutate(across(c(sex, raceethn, provider, moa,
+                  mod, admtype, campus), as.factor))
+
+# Training 10%, Testing 90%
+set.seed(123)
+
+index2 <- createDataPartition(df4$target, p = 0.10, list = FALSE)
+
+train2 <- df4[index2, ]
+test2 <- df4[-index2, ]
+
+nrow(train2)
+nrow(test2)
+table(train2$target)
+```
+
+### Question 6 — Decision Tree
+
+```{r}
+tree2 <- rpart(target ~ ., data = train2,
+               method = "class",
+               control = rpart.control(minsplit = 2, cp = 0.001))
+
+rpart.plot(tree2)
+
+# Variable importance
+if (!is.null(tree2$variable.importance)) {
+  barplot(sort(tree2$variable.importance),
+          horiz = TRUE,
+          las = 1,
+          col = "steelblue",
+          main = "Variable Importance")
+} else {
+  print("Tree has no splits.")
+}
+```
+
+### Question 6 — Train and Tune Models
+
+```{r}
+# Decision tree
+set.seed(123)
+
+model3 <- train(
+  target ~ .,
+  data = train2,
+  method = "rpart",
+  trControl = control,
+  tuneGrid = data.frame(cp = c(0.001, 0.005, 0.01, 0.05, 0.1)),
+  control = rpart.control(minsplit = 2, xval = 0)
+)
+
+# Random forest
+set.seed(123)
+
+model4 <- train(
+  target ~ .,
+  data = train2,
+  method = "rf",
+  trControl = control,
+  tuneGrid = data.frame(mtry = c(1, 2, 3)),
+  ntree = 100
+)
+
+# Results
+model3
+model4
+
+# Tuning plots
+plot(model3)
+plot(model4)
+```
+
+### Question 6 — Compare Models
+
+```{r}
+comparison2 <- resamples(list(Tree = model3, Forest = model4))
+
+summary(comparison2)
+
+dotplot(comparison2, metric = "Accuracy")
+```
+
+### Question 6 — Final Model
+
+```{r}
+# Compare accuracy
+accuracy3 <- max(model3$results$Accuracy)
+accuracy4 <- max(model4$results$Accuracy)
+
+accuracy3
+accuracy4
+
+# Select best model
+if (accuracy3 >= accuracy4) {
+  final_model2 <- model3
+} else {
+  final_model2 <- model4
+}
+
+final_model2
+
+# Test predictions
+pred2 <- predict(final_model2, test2)
+
+confusionMatrix(pred2, test2$target)
+
+# Test accuracy
+mean(pred2 == test2$target)
+```
+
+## Question 7
+
+The first classification task predicted whether patient charges were above or below the median. The second task predicted whether a patient's hospital stay was longer than the median. Decision trees and random forests were trained using 5-fold cross-validation. The models were compared based on accuracy, and the best-performing model was evaluated on the test data.
+
+The first selected model was [model name], with a test accuracy of [accuracy]. The second selected model was [model name], with a test accuracy of [accuracy]. These results suggest that patient and hospital characteristics can help predict hospital charges and length of stay, although model performance depends on the data used.
+
+
+
+
+

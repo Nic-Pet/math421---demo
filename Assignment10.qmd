@@ -17,49 +17,40 @@ library(randomForest)
 
 ```{r}
 
-# Import dataset
+# Import and clean data
 who <- read_csv("adult_census_missing.csv")
-
-# Remove missing values
 who <- na.omit(who)
 
-# Make income categorical
+# Convert categorical variables to factors
 who$income <- as.factor(trimws(who$income))
-
-# Convert character columns to factors
 who <- who %>%
   mutate(across(where(is.character), as.factor))
 
-# Split data
+# Split data 80/20
 set.seed(123)
-
 index <- sample(1:nrow(who), 0.8 * nrow(who))
 
 train <- who[index, ]
 test <- who[-index, ]
 
-# Handle categories not present in training data
-for (col in names(train)) {
-  if (is.factor(train[[col]]) && col != "income") {
+# Group rare categories into "Other"
+train <- train %>%
+  mutate(across(
+    where(is.factor) & !all_of("income"),
+    ~ forcats::fct_lump_min(.x, min = 10, other_level = "Other")
+  ))
 
-    # Find categories that appear fewer than 10 times in training
-    counts <- table(train[[col]])
-    common <- names(counts[counts >= 10])
+# Match test categories to training categories
+test <- test %>%
+  mutate(across(
+    where(is.factor) & !all_of("income"),
+    ~ factor(
+      ifelse(as.character(.x) %in% levels(train[[cur_column()]]),
+             as.character(.x), "Other"),
+      levels = levels(train[[cur_column()]])
+    )
+  ))
 
-    # Group rare and unseen categories into "Other"
-    train[[col]] <- as.character(train[[col]])
-    test[[col]] <- as.character(test[[col]])
-
-    train[[col]][!train[[col]] %in% common] <- "Other"
-    test[[col]][!test[[col]] %in% common] <- "Other"
-
-    # Ensure identical levels
-    train[[col]] <- factor(train[[col]])
-    test[[col]] <- factor(test[[col]], levels = levels(train[[col]]))
-  }
-}
-
-# Check data
 nrow(train)
 nrow(test)
 ```
