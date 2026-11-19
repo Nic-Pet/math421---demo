@@ -1,0 +1,176 @@
+---
+title: "Diamond Price Dashboard"
+format:
+  dashboard:
+    theme: cosmo
+    nav-buttons:
+      - icon: linkedin
+        href: https://www.linkedin.com/
+      - icon: github
+        href: https://raw.githubusercontent.com/USERNAME/REPOSITORY/main/diamonds.qmd
+server: shiny
+---
+
+```{r}
+#| context: setup
+library(shiny)
+library(tidyverse)
+library(plotly)
+library(DT)
+
+df <- diamonds
+```
+
+# Overview
+
+## {.sidebar}
+
+```{r}
+selectInput("cut", "Diamond Cut",
+            choices = c("All", levels(df$cut)))
+
+sliderInput("carat", "Carat Range",
+            min = 0, max = 5,
+            value = c(0, 5), step = 0.1)
+
+checkboxGroupInput("color", "Diamond Color",
+                   choices = levels(df$color),
+                   selected = levels(df$color))
+
+radioButtons("clarity", "Clarity",
+             choices = c("All", levels(df$clarity)))
+
+numericInput("price", "Maximum Price",
+             value = 20000, min = 0)
+```
+
+```{r}
+#| context: server
+
+filtered <- reactive({
+  data <- df |>
+    filter(carat >= input$carat[1],
+           carat <= input$carat[2],
+           color %in% input$color,
+           price <= input$price)
+
+  if (input$cut != "All") {
+    data <- data |> filter(cut == input$cut)
+  }
+
+  if (input$clarity != "All") {
+    data <- data |> filter(clarity == input$clarity)
+  }
+
+  data
+})
+```
+
+## Row {height=20%}
+
+```{r}
+renderValueBox({
+  value_box(
+    title = "Total Diamonds",
+    value = nrow(filtered()),
+    showcase = icon("gem")
+  )
+})
+```
+
+```{r}
+renderValueBox({
+  value_box(
+    title = "Average Price",
+    value = paste0("$", round(mean(filtered()$price), 2)),
+    showcase = icon("dollar-sign")
+  )
+})
+```
+
+## Row
+
+### Price Distribution
+
+```{r}
+renderPlotly({
+  p <- ggplot(filtered(), aes(x = price)) +
+    geom_histogram(bins = 30, fill = "steelblue") +
+    theme_minimal() +
+    labs(x = "Price ($)", y = "Number of Diamonds")
+
+  ggplotly(p)
+})
+```
+
+### Carat vs. Price
+
+```{r}
+renderPlotly({
+  p <- ggplot(filtered(), aes(x = carat, y = price)) +
+    geom_point(alpha = 0.2, color = "steelblue") +
+    theme_minimal()
+
+  ggplotly(p)
+})
+```
+
+# Analysis
+
+## Column {.tabset}
+
+### Price by Cut
+
+```{r}
+ggplotly(
+  ggplot(df, aes(x = cut, y = price, fill = cut)) +
+    geom_boxplot() +
+    theme_minimal() +
+    labs(x = "Cut", y = "Price ($)")
+)
+```
+
+### Average Price by Color
+
+```{r}
+df |>
+  group_by(color) |>
+  summarize(avg_price = mean(price)) |>
+  ggplot(aes(x = color, y = avg_price, fill = color)) +
+  geom_col() +
+  theme_minimal() +
+  labs(x = "Color", y = "Average Price ($)")
+```
+
+### Average Price by Clarity
+
+```{r}
+df |>
+  group_by(clarity) |>
+  summarize(avg_price = mean(price)) |>
+  ggplot(aes(x = clarity, y = avg_price, fill = clarity)) +
+  geom_col() +
+  theme_minimal() +
+  labs(x = "Clarity", y = "Average Price ($)")
+```
+
+### Findings
+
+The dashboard shows that diamond prices generally increase
+as carat weight increases. Price also varies across cut,
+color and clarity categories. However, differences in average
+prices do not necessarily mean that one quality category
+causes higher prices, because carat weight also influences
+the results.
+
+![Diamond](https://upload.wikimedia.org/wikipedia/commons/6/6f/Brillanten.jpg){width=250px}
+
+# Data
+
+## Diamond Dataset
+
+```{r}
+DT::renderDT({
+  datatable(df, options = list(pageLength = 15))
+})
+```

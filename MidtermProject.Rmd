@@ -347,11 +347,36 @@ p <- dfN %>%
 
 print(p)
 
+
+
 ## Question next plot: Do older patients stay in hospitals longer?
 table(dfN$sex)
 unique(dfN$sex)
 filter(admtype_label != "Missing / unknown")
 ```
+```{r}
+p <- dfN %>%
+  filter(!is.na(admtype), !is.na(sex)) %>%
+  ggplot(aes(x = admtype_label, fill = sex)) +
+  geom_bar()+ 
+  facet_wrap(~sex)+
+  coord_flip() +
+  labs(title = "Hospital Admissions by Type",
+       x = "Admission Type",
+       fill = "sex",
+       y = "Number of Patients") +
+  theme_minimal()
+
+print(p)
+
+
+
+## Question next plot: Do older patients stay in hospitals longer?
+table(dfN$sex)
+unique(dfN$sex)
+
+```
+
 
 ## Plot 4 — Average Length of Stay by Age Group
 

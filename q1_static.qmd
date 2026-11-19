@@ -1,0 +1,38 @@
+---
+title: "Dashboard"
+format: dashboard
+editor: visual
+---
+
+
+# Page 1
+
+## {.sidebar}
+
+This is my sidebar.
+
+## Row
+
+### Card 1
+
+Empty card 1.
+
+### Card 2
+
+Empty card 2.
+
+# Page 2
+
+## {.sidebar}
+
+This is my second sidebar.
+
+## Row
+
+### Card 3
+
+Empty card 3.
+
+### Card 4
+
+Empty card 4.

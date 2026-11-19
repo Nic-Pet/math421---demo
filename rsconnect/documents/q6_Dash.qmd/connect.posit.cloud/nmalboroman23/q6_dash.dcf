@@ -1,0 +1,14 @@
+name: q6_dash
+title: q6_Dash
+username: nmalboroman23
+account: nmalboroman23
+server: connect.posit.cloud
+hostUrl: https://api.connect.posit.cloud/v1
+appId: 01a1f4ec-6754-8783-e085-b74fa9a76859
+bundleId:
+url: https://connect.posit.cloud/nmalboroman23/content/01a1f4ec-6754-8783-e085-b74fa9a76859
+version: 1
+quarto_version: 1.7.32
+quarto_engines: knitr
+asMultiple: FALSE
+asStatic: FALSE

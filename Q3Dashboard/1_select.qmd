@@ -1,0 +1,118 @@
+
+---
+title: "Titanic Dashboard"
+format: dashboard
+server: shiny
+---
+
+```{r}
+#| context: setup
+library(shiny)
+library(tidyverse)
+library(plotly)
+library(DT)
+library(lubridate)
+
+df <- read_csv("https://bryantstats.github.io/math421/data/titanic_final.csv") |>
+  drop_na(Age, Embarked) |>
+  mutate(
+    date = mdy(date),
+    Survived = factor(Survived, levels = c(0, 1),
+                      labels = c("No", "Yes")),
+    Pclass = factor(Pclass),
+    AgeGroup = cut(
+      Age,
+      breaks = c(0, 16, 45, 99, Inf),
+      labels = c("0-16", "16-45", "45-99", "100+"),
+      include.lowest = TRUE
+    )
+  )
+
+empty_plot <- function() {
+  plotly_empty() |>
+    layout(title = "No passengers match these inputs.")
+}
+```
+
+# Plots
+
+## {.sidebar}
+
+Explore survival rates and age distributions among Titanic passengers.
+
+```{r}
+selectInput(
+  "var",
+  "Choose a variable",
+  choices = c("Sex", "Pclass", "Embarked", "AgeGroup")
+)
+```
+
+## Row
+
+```{r}
+#| title: Age by the chosen variable
+plotlyOutput("p1")
+```
+
+```{r}
+#| title: Survival by the chosen variable
+plotlyOutput("p2")
+```
+
+# Data
+
+```{r}
+#| title: Titanic Passenger Data
+DTOutput("tbl")
+```
+
+```{r}
+#| context: server
+
+filtered <- reactive({
+  df
+})
+
+output$p1 <- renderPlotly({
+  if (nrow(filtered()) == 0) return(empty_plot())
+
+  p <- ggplot(
+    filtered(),
+    aes(x = Age, color = .data[[input$var]])
+  ) +
+    geom_density(na.rm = TRUE) +
+    labs(
+      x = "Age",
+      y = "Density",
+      color = input$var
+    )
+
+  ggplotly(p)
+})
+
+output$p2 <- renderPlotly({
+  if (nrow(filtered()) == 0) return(empty_plot())
+
+  p <- ggplot(
+    filtered(),
+    aes(x = .data[[input$var]], fill = Survived)
+  ) +
+    geom_bar(position = "fill") +
+    labs(
+      x = input$var,
+      y = "Proportion",
+      fill = "Survived"
+    )
+
+  ggplotly(p)
+})
+
+output$tbl <- renderDT({
+  filtered() |>
+    select(date, Name, Sex, Age, AgeGroup,
+           Pclass, Embarked, Survived) |>
+    datatable(options = list(pageLength = 10))
+})
+```
+
