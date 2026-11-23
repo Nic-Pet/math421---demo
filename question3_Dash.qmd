@@ -1,0 +1,67 @@
+---
+title: "Question 3: My First Interactive Dashboard"
+format: dashboard
+server: shiny
+---
+
+```{r}
+#| context: setup
+library(shiny)
+library(tidyverse)
+library(plotly)
+library(DT)
+
+# Turn R's built-in Titanic summary table into one row per passenger
+titanic <- as.data.frame(Titanic) |>
+  uncount(Freq)
+```
+
+## {.sidebar}
+
+### Choose a group
+
+```{r}
+selectInput("sex", "Passenger group", choices = c("All", "Male", "Female"), selected = "All")
+```
+
+This first example uses R's built-in Titanic data. Choose a group, then explore survival counts.
+
+## Survival
+
+### Row {height=65%}
+
+```{r}
+plotlyOutput("survival_plot")
+```
+
+### Row {height=35%}
+
+```{r}
+DTOutput("passenger_table")
+```
+
+## Passenger details
+
+### Row {height=100%}
+
+```{r}
+DTOutput("details_table")
+```
+
+```{r}
+#| context: server
+selected_titanic <- reactive({
+  if (input$sex == "All") titanic else filter(titanic, Sex == input$sex)
+})
+output$survival_plot <- renderPlotly({
+  p <- selected_titanic() |>
+    count(Class, Survived) |>
+    ggplot(aes(Class, n, fill = Survived, text = paste("Passengers:", n))) +
+    geom_col(position = "dodge") +
+    labs(x = "Passenger class", y = "Number of passengers", fill = "Survived") +
+    theme_minimal()
+  ggplotly(p, tooltip = "text")
+})
+output$passenger_table <- renderDT({ datatable(selected_titanic() |> count(Sex, Class, Survived), options = list(pageLength = 5)) })
+output$details_table <- renderDT({ datatable(selected_titanic(), options = list(pageLength = 10)) })
+```

@@ -1,0 +1,75 @@
+---
+title: "Question 6: Pick a Year Range"
+format: dashboard
+server: shiny
+---
+
+```{r}
+#| context: setup
+library(shiny)
+library(tidyverse)
+library(plotly)
+library(DT)
+library(lubridate)
+
+# Built-in U.S. economic data, so no separate CSV file is needed
+data(economics, package = "ggplot2")
+econ <- economics
+econ_long <- econ |>
+  pivot_longer(cols = c(pce, psavert, uempmed, unemploy),
+               names_to = "measure", values_to = "value") |>
+  mutate(measure = recode(measure,
+    pce = "Personal consumption spending (millions of dollars)",
+    psavert = "Personal savings rate (percent)",
+    uempmed = "Median unemployment duration (weeks)",
+    unemploy = "People unemployed (thousands)"))
+```
+
+## {.sidebar}
+
+### Choose years
+
+```{r}
+sliderInput("years", "Year range", min = 1967, max = 2015, value = c(1990, 2015), sep = "")
+```
+
+Move the handles to focus on a time period.
+
+## Trends
+
+### Row {height=65%}
+
+```{r}
+plotlyOutput("trend")
+```
+
+### Row {height=35%}
+
+```{r}
+DTOutput("data_table")
+```
+
+## Data view
+
+### Row {height=100%}
+
+```{r}
+plotlyOutput("second_plot")
+```
+
+```{r}
+#| context: server
+filtered <- reactive(filter(econ_long, year(date) >= input$years[1], year(date) <= input$years[2]))
+output$trend <- renderPlotly({
+  p <- ggplot(filtered(), aes(date, value, color = measure)) + geom_line() +
+    labs(x = NULL, y = "Value (scales differ by measure)", color = "Measure") + theme_minimal()
+  ggplotly(p)
+})
+output$second_plot <- renderPlotly({
+  annual <- filtered() |> mutate(year = year(date)) |> group_by(year, measure) |> summarise(value = mean(value), .groups = "drop")
+  p <- ggplot(annual, aes(year, value, color = measure)) + geom_line() + geom_point() +
+    labs(x = "Year", y = "Annual average", color = "Measure") + theme_minimal()
+  ggplotly(p)
+})
+output$data_table <- renderDT({ datatable(filtered(), options = list(pageLength = 8)) })
+```

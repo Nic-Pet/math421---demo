@@ -1,100 +1,74 @@
+---
+title: "Question 7: Choose a Chart Measure"
+format: dashboard
+server: shiny
+---
+
 ```{r}
-#| include: false
+#| context: setup
+library(shiny)
 library(tidyverse)
 library(plotly)
 library(DT)
-df <- read_csv("https://bryantstats.github.io/math421/data/titanic_final.csv") |>
-  drop_na(Age, Embarked) |>
-  mutate(Survived = factor(Survived, labels = c("No", "Yes")),
-         Pclass   = factor(Pclass))
-```
+library(lubridate)
 
-# Overview
+# Built-in U.S. economic data, so no separate CSV file is needed
+data(economics, package = "ggplot2")
+econ <- economics
+econ_long <- econ |>
+  pivot_longer(cols = c(pce, psavert, uempmed, unemploy),
+               names_to = "measure", values_to = "value") |>
+  mutate(measure = recode(measure,
+    pce = "Personal consumption spending (millions of dollars)",
+    psavert = "Personal savings rate (percent)",
+    uempmed = "Median unemployment duration (weeks)",
+    unemploy = "People unemployed (thousands)"))
+```
 
 ## {.sidebar}
 
-The sinking of the Titanic is one of the most infamous shipwrecks in history. While there was some element of luck involved in surviving, some groups of people were more likely to survive than others.
-
-This dashboard looks at who survived, using `r nrow(df)` passengers with a known age and port.
-
-**Data:** [titanic_final.csv](https://bryantstats.github.io/math421/data/titanic_final.csv)
-
-## Column
-
-### Row {height=25%}
+### Choose a measure
 
 ```{r}
-#| content: valuebox
-#| title: "Passengers"
-list(icon = "people", color = "primary", value = nrow(df))
+radioButtons("measure", "Chart measure", choices = unique(econ_long$measure), selected = unique(econ_long$measure)[1])
+```
+
+Pick one series to see its trend and distribution.
+
+## Trends
+
+### Row {height=65%}
+
+```{r}
+plotlyOutput("trend")
+```
+
+### Row {height=35%}
+
+```{r}
+DTOutput("data_table")
+```
+
+## Data view
+
+### Row {height=100%}
+
+```{r}
+plotlyOutput("second_plot")
 ```
 
 ```{r}
-#| content: valuebox
-#| title: "Survival rate"
-list(icon = "life-preserver", color = "success",
-     value = scales::percent(mean(df$Survived == "Yes"), accuracy = 1))
+#| context: server
+filtered <- reactive(filter(econ_long, measure == input$measure))
+output$trend <- renderPlotly({
+  p <- ggplot(filtered(), aes(date, value)) + geom_line(color = "darkgreen") +
+    labs(x = NULL, y = input$measure) + theme_minimal()
+  ggplotly(p)
+})
+output$second_plot <- renderPlotly({
+  p <- ggplot(filtered(), aes(value)) + geom_histogram(bins = 25, fill = "darkseagreen") +
+    labs(x = input$measure, y = "Number of months", title = "Distribution over time") + theme_minimal()
+  ggplotly(p)
+})
+output$data_table <- renderDT({ datatable(filtered(), options = list(pageLength = 8)) })
 ```
-
-```{r}
-#| content: valuebox
-#| title: "Median age"
-list(icon = "person", color = "info", value = median(df$Age))
-```
-
-### Row {height=75%}
-
-```{r}
-#| title: Survival by class
-p <- ggplot(df, aes(x = Pclass, fill = Survived)) +
-  geom_bar(position = "fill") +
-  labs(y = "Proportion")
-ggplotly(p)
-```
-
-```{r}
-#| title: Survival by sex
-p <- ggplot(df, aes(x = Sex, fill = Survived)) +
-  geom_bar(position = "fill") +
-  labs(y = "Proportion")
-ggplotly(p)
-```
-
-# Distributions
-
-## Column {.tabset}
-
-```{r}
-#| title: Age
-p <- ggplot(df, aes(x = Age, color = Survived)) +
-  geom_density()
-ggplotly(p)
-```
-
-```{r}
-#| title: Fare
-p <- ggplot(df, aes(x = Fare, color = Survived)) +
-  geom_density()
-ggplotly(p)
-```
-
-# Data
-
-```{r}
-#| title: Passenger data (type in the search box to filter)
-df |>
-  select(Name, Sex, Age, Pclass, Embarked, Fare, Survived) |>
-  datatable(options = list(pageLength = 10))
-```
-
-# About
-
-::: {.card title="About this dashboard"}
-
-![](logo.png){width=60}
-
-This dashboard was built with Quarto. The **Overview** page shows the main numbers, **Distributions** compares age and fare for passengers who did and did not survive, and **Data** lets you search the passenger list.
-
-Women and first-class passengers survived at much higher rates than men and third-class passengers.
-
-:::

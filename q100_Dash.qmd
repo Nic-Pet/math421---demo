@@ -13,12 +13,18 @@ server: shiny
 
 ```{r}
 #| context: setup
+#| include: false
 library(shiny)
 library(tidyverse)
 library(plotly)
 library(DT)
+library(bslib)
 
-df <- diamonds
+df <- ggplot2::diamonds
+diamond_grade_colors <- c(
+  D = "#F4F8FB", E = "#E1EDF4", F = "#C9DDE8",
+  G = "#B8CED0", H = "#D9C99F", I = "#D8A84E", J = "#B87925"
+)
 ```
 
 # Overview
@@ -26,22 +32,121 @@ df <- diamonds
 ## {.sidebar}
 
 ```{r}
-selectInput("cut", "Diamond Cut",
-            choices = c("All", levels(df$cut)))
-
-sliderInput("carat", "Carat Range",
-            min = 0, max = 5,
+selectInput("cut", "Diamond Cut", choices = c("All", levels(df$cut)))
+sliderInput("carat", "Carat Range", min = 0, max = 5,
             value = c(0, 5), step = 0.1)
+checkboxGroupInput("color", "Diamond Color Grade",
+                   choices = levels(df$color), selected = levels(df$color))
+radioButtons("clarity", "Clarity", choices = c("All", levels(df$clarity)))
+numericInput("price", "Maximum Price ($)", value = 20000, min = 0)
+```
 
-checkboxGroupInput("color", "Diamond Color",
-                   choices = levels(df$color),
-                   selected = levels(df$color))
+## Row {height=20%}
 
-radioButtons("clarity", "Clarity",
-             choices = c("All", levels(df$clarity)))
+```{r}
+value_box(title = "Diamonds in View", value = textOutput("total_diamonds"),
+          showcase = icon("gem"), theme = "primary")
+```
 
-numericInput("price", "Maximum Price",
-             value = 20000, min = 0)
+```{r}
+value_box(title = "Average Price", value = textOutput("average_price"),
+          showcase = icon("sack-dollar"), theme = "success")
+```
+
+## Row
+
+### Price Distribution
+
+```{r}
+plotlyOutput("price_hist")
+```
+
+### Carat vs. Price
+
+```{r}
+plotlyOutput("carat_price")
+```
+
+# Distributions
+
+## Row
+
+### Carat Weight Distribution
+
+```{r}
+plotlyOutput("carat_hist")
+```
+
+### Price Spread by Cut
+
+```{r}
+plotlyOutput("cut_price_box")
+```
+
+## Row
+
+### Diamonds by Color Grade
+
+```{r}
+plotlyOutput("color_count")
+```
+
+### Diamonds by Clarity
+
+```{r}
+plotlyOutput("clarity_count")
+```
+
+# Quality
+
+## Column {.tabset}
+
+### Average Price by Color Grade
+
+```{r}
+plotlyOutput("avg_by_color")
+```
+
+### Average Price by Cut
+
+```{r}
+plotlyOutput("avg_by_cut")
+```
+
+### Average Price by Clarity
+
+```{r}
+plotlyOutput("avg_by_clarity")
+```
+
+### Price by Cut and Clarity
+
+```{r}
+plotlyOutput("cut_clarity_box")
+```
+
+# Relationships
+
+## Row
+
+### Carat and Price (Log Scale)
+
+```{r}
+plotlyOutput("carat_price_log")
+```
+
+### Carat Weight by Cut
+
+```{r}
+plotlyOutput("carat_cut_violin")
+```
+
+# Data
+
+## Filtered Diamond Dataset
+
+```{r}
+DTOutput("diamonds_table")
 ```
 
 ```{r}
@@ -53,124 +158,125 @@ filtered <- reactive({
            carat <= input$carat[2],
            color %in% input$color,
            price <= input$price)
-
-  if (input$cut != "All") {
-    data <- data |> filter(cut == input$cut)
-  }
-
-  if (input$clarity != "All") {
-    data <- data |> filter(clarity == input$clarity)
-  }
-
+  if (input$cut != "All") data <- data |> filter(cut == input$cut)
+  if (input$clarity != "All") data <- data |> filter(clarity == input$clarity)
   data
 })
-```
 
-## Row {height=20%}
-
-```{r}
-renderValueBox({
-  value_box(
-    title = "Total Diamonds",
-    value = nrow(filtered()),
-    showcase = icon("gem")
-  )
+output$total_diamonds <- renderText({
+  nrow(filtered())
 })
-```
 
-```{r}
-renderValueBox({
-  value_box(
-    title = "Average Price",
-    value = paste0("$", round(mean(filtered()$price), 2)),
-    showcase = icon("dollar-sign")
-  )
+output$average_price <- renderText({
+  data <- filtered()
+  if (nrow(data) == 0) "No matches" else scales::dollar(mean(data$price), accuracy = 1)
 })
-```
 
-## Row
-
-### Price Distribution
-
-```{r}
-renderPlotly({
-  p <- ggplot(filtered(), aes(x = price)) +
-    geom_histogram(bins = 30, fill = "steelblue") +
-    theme_minimal() +
-    labs(x = "Price ($)", y = "Number of Diamonds")
-
-  ggplotly(p)
+output$price_hist <- renderPlotly({
+  ggplotly(ggplot(filtered(), aes(x = price)) +
+    geom_histogram(bins = 35, fill = "#2A9D8F", color = "white") +
+    scale_x_continuous(labels = scales::label_dollar()) +
+    labs(title = "How prices are distributed", x = "Price", y = "Number of diamonds") +
+    theme_minimal(base_size = 13))
 })
-```
 
-### Carat vs. Price
-
-```{r}
-renderPlotly({
-  p <- ggplot(filtered(), aes(x = carat, y = price)) +
-    geom_point(alpha = 0.2, color = "steelblue") +
-    theme_minimal()
-
-  ggplotly(p)
+output$carat_price <- renderPlotly({
+  ggplotly(ggplot(filtered(), aes(x = carat, y = price, color = color)) +
+    geom_point(alpha = 0.55, size = 1.7) +
+    scale_color_manual(values = diamond_grade_colors, drop = FALSE) +
+    scale_y_continuous(labels = scales::label_dollar()) +
+    labs(title = "Price tends to rise with carat weight", x = "Carat", y = "Price", color = "Grade") +
+    theme_minimal(base_size = 13))
 })
-```
 
-# Analysis
+output$carat_hist <- renderPlotly({
+  ggplotly(ggplot(filtered(), aes(x = carat)) +
+    geom_histogram(bins = 30, fill = "#457B9D", color = "white") +
+    labs(title = "Carat weight distribution", x = "Carat", y = "Number of diamonds") +
+    theme_minimal(base_size = 13))
+})
 
-## Column {.tabset}
+output$cut_price_box <- renderPlotly({
+  ggplotly(ggplot(filtered(), aes(x = cut, y = price, fill = cut)) +
+    geom_boxplot(outlier.alpha = 0.18) + scale_fill_brewer(palette = "Set2") +
+    scale_y_continuous(labels = scales::label_dollar()) +
+    labs(title = "Price spread by cut", x = "Cut", y = "Price") +
+    theme_minimal(base_size = 13) + theme(legend.position = "none"))
+})
 
-### Price by Cut
+output$color_count <- renderPlotly({
+  counts <- filtered() |> count(color)
+  ggplotly(ggplot(counts, aes(x = color, y = n, fill = color)) +
+    geom_col(color = "#52616B", linewidth = 0.25) +
+    scale_fill_manual(values = diamond_grade_colors, drop = FALSE) +
+    labs(title = "Diamonds by color grade", x = "Color grade (D is most colorless)", y = "Count") +
+    theme_minimal(base_size = 13) + theme(legend.position = "none"))
+})
 
-```{r}
-ggplotly(
-  ggplot(df, aes(x = cut, y = price, fill = cut)) +
-    geom_boxplot() +
-    theme_minimal() +
-    labs(x = "Cut", y = "Price ($)")
-)
-```
+output$clarity_count <- renderPlotly({
+  counts <- filtered() |> count(clarity)
+  ggplotly(ggplot(counts, aes(x = clarity, y = n, fill = clarity)) +
+    geom_col() + scale_fill_brewer(palette = "Pastel1") +
+    labs(title = "Diamonds by clarity", x = "Clarity", y = "Count") +
+    theme_minimal(base_size = 13) + theme(legend.position = "none"))
+})
 
-### Average Price by Color
+output$avg_by_color <- renderPlotly({
+  averages <- filtered() |> group_by(color) |> summarize(avg_price = mean(price), .groups = "drop")
+  ggplotly(ggplot(averages, aes(x = color, y = avg_price, fill = color)) +
+    geom_col(color = "#52616B", linewidth = 0.25) +
+    scale_fill_manual(values = diamond_grade_colors, drop = FALSE) +
+    scale_y_continuous(labels = scales::label_dollar()) +
+    labs(title = "Average price by diamond color grade", x = "Color grade", y = "Average price") +
+    theme_minimal(base_size = 13) + theme(legend.position = "none"))
+})
 
-```{r}
-df |>
-  group_by(color) |>
-  summarize(avg_price = mean(price)) |>
-  ggplot(aes(x = color, y = avg_price, fill = color)) +
-  geom_col() +
-  theme_minimal() +
-  labs(x = "Color", y = "Average Price ($)")
-```
+output$avg_by_cut <- renderPlotly({
+  averages <- filtered() |> group_by(cut) |> summarize(avg_price = mean(price), .groups = "drop")
+  ggplotly(ggplot(averages, aes(x = cut, y = avg_price, fill = cut)) +
+    geom_col() + scale_fill_brewer(palette = "Set2") +
+    scale_y_continuous(labels = scales::label_dollar()) +
+    labs(title = "Average price by cut", x = "Cut", y = "Average price") +
+    theme_minimal(base_size = 13) + theme(legend.position = "none"))
+})
 
-### Average Price by Clarity
+output$avg_by_clarity <- renderPlotly({
+  averages <- filtered() |> group_by(clarity) |> summarize(avg_price = mean(price), .groups = "drop")
+  ggplotly(ggplot(averages, aes(x = clarity, y = avg_price, fill = clarity)) +
+    geom_col() + scale_fill_brewer(palette = "Pastel1") +
+    scale_y_continuous(labels = scales::label_dollar()) +
+    labs(title = "Average price by clarity", x = "Clarity", y = "Average price") +
+    theme_minimal(base_size = 13) + theme(legend.position = "none"))
+})
 
-```{r}
-df |>
-  group_by(clarity) |>
-  summarize(avg_price = mean(price)) |>
-  ggplot(aes(x = clarity, y = avg_price, fill = clarity)) +
-  geom_col() +
-  theme_minimal() +
-  labs(x = "Clarity", y = "Average Price ($)")
-```
+output$cut_clarity_box <- renderPlotly({
+  ggplotly(ggplot(filtered(), aes(x = cut, y = price, fill = clarity)) +
+    geom_boxplot(outlier.alpha = 0.12) + scale_fill_brewer(palette = "Set3") +
+    scale_y_continuous(labels = scales::label_dollar()) +
+    labs(title = "Price ranges by cut and clarity", x = "Cut", y = "Price", fill = "Clarity") +
+    theme_minimal(base_size = 13))
+})
 
-### Findings
+output$carat_price_log <- renderPlotly({
+  ggplotly(ggplot(filtered(), aes(x = carat, y = price, color = color)) +
+    geom_point(alpha = 0.45, size = 1.5) +
+    geom_smooth(aes(group = 1), method = "lm", color = "#E76F51", se = FALSE) +
+    scale_color_manual(values = diamond_grade_colors, drop = FALSE) +
+    scale_y_log10(labels = scales::label_dollar()) +
+    labs(title = "Carat and price relationship", x = "Carat", y = "Price (log scale)", color = "Grade") +
+    theme_minimal(base_size = 13))
+})
 
-The dashboard shows that diamond prices generally increase
-as carat weight increases. Price also varies across cut,
-color and clarity categories. However, differences in average
-prices do not necessarily mean that one quality category
-causes higher prices, because carat weight also influences
-the results.
+output$carat_cut_violin <- renderPlotly({
+  ggplotly(ggplot(filtered(), aes(x = cut, y = carat, fill = cut)) +
+    geom_violin(alpha = 0.8, trim = TRUE) +
+    geom_boxplot(width = 0.12, outlier.alpha = 0.12, fill = "white") +
+    scale_fill_brewer(palette = "Set2") +
+    labs(title = "Carat weight distribution by cut", x = "Cut", y = "Carat") +
+    theme_minimal(base_size = 13) + theme(legend.position = "none"))
+})
 
-![Diamond](https://upload.wikimedia.org/wikipedia/commons/6/6f/Brillanten.jpg){width=250px}
-
-# Data
-
-## Diamond Dataset
-
-```{r}
-DT::renderDT({
-  datatable(df, options = list(pageLength = 15))
+output$diamonds_table <- DT::renderDT({
+  DT::datatable(filtered(), options = list(pageLength = 15, scrollX = TRUE))
 })
 ```

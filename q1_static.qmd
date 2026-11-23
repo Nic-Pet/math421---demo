@@ -4,10 +4,9 @@ format: dashboard
 editor: visual
 ---
 
-
 # Page 1
 
-## {.sidebar}
+##  {.sidebar}
 
 This is my sidebar.
 
@@ -23,7 +22,7 @@ Empty card 2.
 
 # Page 2
 
-## {.sidebar}
+##  {.sidebar}
 
 This is my second sidebar.
 
